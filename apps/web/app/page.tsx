@@ -1,15 +1,22 @@
-import { Button } from "@workspace/ui/components/button";
+"use client";
 
-import { add } from "@workspace/math/add";
+import { useMutation, useQuery } from "convex/react";
+import {Button} from "@workspace/ui/components/button"
 
+import { api } from "@workspace/backend/_generated/api";
 export default function Page() {
+  const users = useQuery(api.users.getMany);
+
+  const addUser = useMutation(api.users.add)
   return (
-    <div className="flex items-center justify-center min-h-svh">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Hello ChatCue</h1>
-        <Button size="sm">Button</Button>
-        <p>{add(3, 4)}</p>
+    <div className="flex flex-col items-center justify-center min-h-svh">
+      <p>app/web</p>
+        <Button onClick={()=>addUser()} variant="outline" className="cursor-pointer hover:scale-200">Add</Button>
+      <div className="max-w-sm w-full mx-auto">
+        {JSON.stringify(users, null, 2)}
       </div>
     </div>
   );
 }
+
+// kabhi bhi humko yedi kisi particular aap mein kuch install krna hota hai the simply run this command "pnpm -F web add convex" ,aur hana aap ke place per jis project ke andar aad krna chahte ho usme kaar sekte ho aur haan ek aur baat ye shirf pnpm ke case mein hi use hota hai kyuki sabke sath saab compatable nhi hote hai n isiliye
