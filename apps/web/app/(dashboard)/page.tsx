@@ -1,7 +1,7 @@
 "use client";
 
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton, UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, SignInButton, UserButton } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { Button } from "@workspace/ui/components/button";
 
@@ -16,6 +16,7 @@ export default function Page() {
         <div className="flex flex-col items-center justify-center min-h-svh">
           <p>app/web</p>
           <UserButton/>
+          <OrganizationSwitcher hidePersonal={true}/>
           <Button
             onClick={() => addUser()}
             variant="outline"
