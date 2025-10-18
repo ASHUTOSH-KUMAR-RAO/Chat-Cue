@@ -25,7 +25,6 @@ export default function Page() {
             Add
           </Button>
           <div className="max-w-sm w-full mx-auto">
-            {JSON.stringify(users, null, 2)}
           </div>
         </div>
       </Authenticated>
