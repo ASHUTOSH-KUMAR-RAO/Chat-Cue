@@ -1,13 +1,8 @@
-import { AuthGaurd } from "@/modules/auth/ui/components/auth-guard";
-import { OrganizationGaurd } from "@/modules/auth/ui/components/organization-gaurd";
+import { DashboardLayout } from "@/modules/dashboard/ui/layout/dashboard-layout";
 import React from "react";
 
 const Layou = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <AuthGaurd>
-      <OrganizationGaurd>{children}</OrganizationGaurd>
-    </AuthGaurd>
-  );
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 export default Layou;
