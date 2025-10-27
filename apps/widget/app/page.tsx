@@ -1,41 +1,17 @@
 "use client";
 
-import { useVapi } from "@/modules/widget/hooks/use-vapi";
-import { Button } from "@workspace/ui/components/button";
+import WidgetView from "@/modules/widget/ui/views/widget-view";
+import { use } from "react";
 
-export default function Page() {
-  const {
-    isSpeaking,
-    isConnecting,
-    isConnected,
-    transcript,
-    startCall,
-    endCall,
-  } = useVapi();
-  return (
-    <div className="flex flex-col items-center justify-center min-h-svh max-w-md mx-auto w-full">
-      <p>app/widget</p>
-      <Button
-        onClick={() => startCall()}
-        variant="outline"
-        className="cursor-pointer hover:animate-bounce"
-      >
-        Start Call
-      </Button>
-      <Button
-        onClick={() => endCall()}
-        variant="destructive"
-        className="cursor-pointer hover:animate-bounce"
-      >
-        End Call
-      </Button>
-
-      <p>Is Connected : {`${isConnected}`}</p>
-      <p>Is Connecting : {`${isConnecting}`}</p>
-      <p>Is Speaking : {`${isSpeaking}`}</p>
-
-      <p>{JSON.stringify(transcript,null,2)}</p>
-
-    </div>
-  );
+interface Props {
+  searchParams: Promise<{
+    organizationId: string;
+  }>;
 }
+
+const Page = ({ searchParams }: Props) => {
+  const { organizationId } = use(searchParams); //* Basically jo hum yeha per 'use Hook" use kr rehe hai iska main purpose hota hai ki Promise read karna(means ke hum async data ko easily handle kr skte hai without using useEffect or useState) aur hum yeha per searchParams se organizationId ko extract kr rhe hai.
+  return <WidgetView organizationId={organizationId} />;
+};
+
+export default Page;
