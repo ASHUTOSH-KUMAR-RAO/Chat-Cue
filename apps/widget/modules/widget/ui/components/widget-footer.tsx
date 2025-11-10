@@ -29,7 +29,6 @@ const WidgetFooter = () => {
         <InboxIcon
           className={cn(
             "size-5 transition-transform duration-200 hover:scale-105",
-            screen === "inbox" ? "text-primary" : "text-muted-foreground/70"
           )}
         />
       </Button>
