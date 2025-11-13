@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // Basically hum 24 hours ko millisecond mein convert kiya hai
+const SESSION_DURATION = 24 * 60 * 60 * 1000; // Basically humne yeha per kiya hai mere auth ka session 24 hour mein delet ho jayega
 
 export const create = mutation({
   args: {
@@ -37,5 +37,22 @@ export const create = mutation({
       expiresAt,
     }); //! aur pta hai jo yeha per ctx.db.insert likha hai n ye always Id hi return krega isiliye hamne varibale ka name contactSessiosId rakha hai
     return contactSessionId;
+  },
+});
+
+export const validate = mutation({
+  args: {
+    contactSessionId: v.id("contactSessions"),
+  },
+  handler: async (ctx, args) => {
+    const contactSession = await ctx.db.get(args.contactSessionId);
+    if (!contactSession) {
+      return { valid: false, reason: "Contact Session Not Found" };
+    }
+    if (contactSession.expiresAt < Date.now()) {
+      return { valid: false, reason: "Contact Session Expired" };
+    }
+
+    return { valid: true, contactSession };
   },
 });

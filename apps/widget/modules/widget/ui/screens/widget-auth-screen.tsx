@@ -2,7 +2,7 @@ import { WidgetHeader } from "../components/widget-header";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {api} from "@workspace/backend/_generated/api"
+import { api } from "@workspace/backend/_generated/api";
 import {
   Form,
   FormControl,
@@ -14,6 +14,8 @@ import { Input } from "@workspace/ui/components/input";
 import { Button } from "@workspace/ui/components/button";
 import { useMutation } from "convex/react";
 import { Doc } from "@workspace/backend/_generated/dataModel";
+import { useAtomValue, useSetAtom } from "jotai";
+import { contactSessionIdAtomFamily, organizationIdAtom } from "../../atoms/widget-atoms";
 const formSchema = z.object({
   name: z.string().min(1, "Name is Required"),
   email: z.string().email("Invalid Email Address"),
@@ -23,9 +25,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 // For Testing Purpose Only
 
-const organizationId = "123"
+const organizationId = "123";
 
 export const WidgetAuthScreen = () => {
+    const organizationId = useAtomValue(organizationIdAtom)
+  const setContactSessionId = useSetAtom(contactSessionIdAtomFamily(organizationId || ""))
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,37 +38,34 @@ export const WidgetAuthScreen = () => {
     },
   });
 
-    const createContactSession = useMutation(api.public.contactSessions.create);
+  const createContactSession = useMutation(api.public.contactSessions.create);
 
   const onSubmit = async (values: FormValues) => {
+    if (!organizationId) {
+      return;
+    }
 
-      if (!organizationId) {
-        return
-        }
+    const metadata: Doc<"contactSessions">["metadata"] = {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      languages: navigator.languages?.join(","),
+      platform: navigator.platform,
+      vendor: navigator.vendor,
+      screenResolution: `${screen.width} * ${screen.height}`,
+      viewportSize: `${window.innerWidth} * ${window.innerHeight}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      cookieEnabled: navigator.cookieEnabled,
+      referrer: document.referrer || "direct",
+      currentUrl: window.location.href,
+    };
 
-        const metadata :Doc<"contactSessions">["metadata"] = {
-          userAgent:navigator.userAgent,
-          language:navigator.language,
-          languages:navigator.languages?.join(","),
-          platform:navigator.platform,
-          vendor:navigator.vendor,
-          screenResolution:`${screen.width} * ${screen.height}`,
-          viewportSize:`${window.innerWidth} * ${window.innerHeight}`,
-          timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
-          timezoneOffset:new Date().getTimezoneOffset(),
-          cookieEnabled:navigator.cookieEnabled,
-          referrer:document.referrer || "direct",
-          currentUrl:window.location.href
-
-        }
-
-        const contactSessionId = await createContactSession({
-          ...values,
-          metadata,
-          organizationId
-        })
-
-        console.log({contactSessionId})
+    const contactSessionId = await createContactSession({
+      ...values,
+      metadata,
+      organizationId,
+    });
+      setContactSessionId(contactSessionId)
   };
 
   return (
@@ -122,7 +123,12 @@ export const WidgetAuthScreen = () => {
               )}
             />
 
-            <Button type="submit" className="mt-2" disabled={form.formState.isSubmitting} size="lg">
+            <Button
+              type="submit"
+              className="mt-2"
+              disabled={form.formState.isSubmitting}
+              size="lg"
+            >
               Get Started
             </Button>
           </form>
