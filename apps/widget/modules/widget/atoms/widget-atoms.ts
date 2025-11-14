@@ -23,3 +23,4 @@ export const contactSessionIdAtomFamily = atomFamily((organizationId: string) =>
 export const loadingMessageAtom = atom<string | null>(null);
 
 export const organizationIdAtom = atom<string | null>(null);
+export const conversationIdAtom = atom<Id<"conversations"> | null>(null);

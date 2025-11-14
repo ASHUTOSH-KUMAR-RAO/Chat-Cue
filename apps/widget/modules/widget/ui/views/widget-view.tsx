@@ -5,6 +5,8 @@ import { WidgetAuthScreen } from "@/modules/widget/ui/screens/widget-auth-screen
 import { screenAtom } from "@/modules/widget/atoms/widget-atoms";
 import { WidgetErrorScreen } from "@/modules/widget/ui/screens/widget-screen-error";
 import { WidgetLoadingScreen } from "../screens/widget-loading-screen";
+import { WidgetSellectionScreen } from "../screens/widget-selection-screen";
+import { WidgetChatScreen } from "../screens/widget-chat-screen";
 
 interface Props {
   organizationId: string | null;
@@ -20,8 +22,8 @@ const WidgetView = ({ organizationId }: Props) => {
     auth: <WidgetAuthScreen />,
     voice: <p>Todo voice</p>,
     inbox: <p>Todo inbox</p>,
-    selection: <p>Todo:Selection</p>,
-    chat: <p>Todo: Chat</p>,
+    selection: <WidgetSellectionScreen/>,
+    chat: <WidgetChatScreen/>,
     contact: <p>Todo: Contact</p>,
   };
   return (
