@@ -13,22 +13,22 @@ interface Props {
 }
 
 const WidgetView = ({ organizationId }: Props) => {
-
-  const screen = useAtomValue(screenAtom)
+  const screen = useAtomValue(screenAtom);
 
   const screenComponent = {
-    error:<WidgetErrorScreen/>,
-    loading:<WidgetLoadingScreen organizationId={organizationId}/>,
+    error: <WidgetErrorScreen />,
+    loading: <WidgetLoadingScreen organizationId={organizationId} />,
     auth: <WidgetAuthScreen />,
     voice: <p>Todo voice</p>,
     inbox: <p>Todo inbox</p>,
-    selection: <WidgetSellectionScreen/>,
-    chat: <WidgetChatScreen/>,
+    selection: <WidgetSellectionScreen />,
+    chat: <WidgetChatScreen />,
     contact: <p>Todo: Contact</p>,
   };
+
   return (
-    <main className="min-h-screen min-w-screen flex flex-col overflow-hidden rounded-xl h-full w-full border border-border/50 bg-gradient-to-br from-muted via-muted/95 to-muted/90 shadow-xl">
-        {screenComponent[screen]}
+    <main className="min-h-screen min-w-screen flex flex-col overflow-hidden rounded-xl h-full w-full border border-white/10 bg-gradient-to-br from-gray-900 via-gray-800 to-black shadow-2xl">
+      {screenComponent[screen]}
     </main>
   );
 };
