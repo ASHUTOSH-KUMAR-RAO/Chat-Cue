@@ -3,6 +3,11 @@
 import { useThreadMessages, toUIMessages } from "@convex-dev/agent/react";
 import { ArrowLeft, Menu, Send } from "lucide-react";
 import { WidgetHeader } from "@/modules/widget/ui/components/widget-header";
+import { useInfinitScroll } from "@workspace/ui/hooks/use-infinite.scroll";
+import {
+  InfiniteScrollTrigger,
+} from "@workspace/ui/components/infinite-scroll-trigger";
+import {DicebearAvatar} from "@workspace/ui/components/dicebear-avatar"
 import { Button } from "@workspace/ui/components/button";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -46,24 +51,30 @@ const formSchema = z.object({
 
 // Black & White Particle Component
 const Particle = ({ delay }: { delay: number }) => {
-  const [position, setPosition] = useState({ x: Math.random() * 100, y: Math.random() * 100 });
+  const [position, setPosition] = useState({
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+  });
   const isWhite = Math.random() > 0.5;
   const size = Math.random() * 4 + 2;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPosition({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-      });
-    }, 8000 + Math.random() * 4000);
+    const interval = setInterval(
+      () => {
+        setPosition({
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+        });
+      },
+      8000 + Math.random() * 4000
+    );
 
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div
-      className={`absolute rounded-full ${isWhite ? 'bg-white' : 'bg-black'} opacity-20 blur-[1px]`}
+      className={`absolute rounded-full ${isWhite ? "bg-white" : "bg-black"} opacity-20 blur-[1px]`}
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -112,6 +123,13 @@ export const WidgetChatScreen = () => {
       : "skip",
     { initialNumItems: 10 }
   );
+
+  const { topElementRef, handleLoadMore, canLoadMore, isLoadingMore } =
+    useInfinitScroll({
+      status: messages.status,
+      loadMore: messages.loadMore,
+      loadSize: 10,
+    });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -233,6 +251,12 @@ export const WidgetChatScreen = () => {
       <div className="flex-1 overflow-hidden relative z-10">
         <AIConversation className="h-full">
           <AIConversationContent className="p-4 space-y-3">
+            <InfiniteScrollTrigger
+              canLoadMore={canLoadMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={handleLoadMore}
+              ref={topElementRef}
+            />
             {toUIMessages(messages.results || []).map((message, index) => {
               const isUser = message.role === "user";
               return (
@@ -245,15 +269,16 @@ export const WidgetChatScreen = () => {
                     from={isUser ? "user" : "assistant"}
                     className={`
                       group transition-all duration-300 hover:scale-[1.01]
-                      ${isUser ? 'ml-auto max-w-[80%]' : 'mr-auto max-w-[80%]'}
+                      ${isUser ? "ml-auto max-w-[80%]" : "mr-auto max-w-[80%]"}
                     `}
                   >
                     <AIMessageContent
                       className={`
                         rounded-2xl px-4 py-3 shadow-xl transition-all duration-300 group-hover:shadow-2xl
-                        ${isUser
-                          ? 'bg-gradient-to-br from-gray-200 to-gray-300 text-black shadow-gray-400/30 border border-gray-300/20'
-                          : 'backdrop-blur-xl bg-black/40 border border-white/10 text-white shadow-black/40'
+                        ${
+                          isUser
+                            ? "bg-gradient-to-br from-gray-200 to-gray-300 text-black shadow-gray-400/30 border border-gray-300/20"
+                            : "backdrop-blur-xl bg-black/40 border border-white/10 text-white shadow-black/40"
                         }
                       `}
                     >
@@ -261,6 +286,13 @@ export const WidgetChatScreen = () => {
                         {(message as any).content}
                       </AIResponse>
                     </AIMessageContent>
+                    {message.role === "assistant" && (
+                      <DicebearAvatar
+                        imageUrl="/avatar.svg"
+                        seed="assistant"
+                        size={32}
+                      />
+                    )}
                   </AIMessage>
                 </div>
               );
@@ -271,9 +303,18 @@ export const WidgetChatScreen = () => {
               <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 mr-auto max-w-[80%]">
                 <div className="backdrop-blur-xl bg-black/40 border border-white/10 rounded-2xl px-4 py-3 shadow-xl">
                   <div className="flex gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="h-2 w-2 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="h-2 w-2 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -285,7 +326,13 @@ export const WidgetChatScreen = () => {
       {/* Input Area - Glass Effect */}
       <div className="relative backdrop-blur-xl bg-black/60 border-t border-white/10 shadow-2xl z-20">
         <Form {...(form as any)}>
-          <div className="p-4" onSubmit={(e) => { e.preventDefault(); form.handleSubmit(onSubmit)(); }}>
+          <div
+            className="p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)();
+            }}
+          >
             <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 shadow-xl hover:border-white/20 focus-within:border-white/30 transition-all duration-300">
               <FormField
                 control={form.control as any}
@@ -293,7 +340,9 @@ export const WidgetChatScreen = () => {
                 disabled={conversation.status === "resolved" || isSubmitting}
                 render={({ field }) => (
                   <AIInputTextarea
-                    disabled={conversation.status === "resolved" || isSubmitting}
+                    disabled={
+                      conversation.status === "resolved" || isSubmitting
+                    }
                     onChange={field.onChange}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -323,7 +372,9 @@ export const WidgetChatScreen = () => {
                   size="icon"
                   className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 text-black hover:from-gray-400 hover:to-gray-500 shadow-lg shadow-gray-500/30 hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Send className={`h-4 w-4 ${isSubmitting ? 'animate-pulse' : ''}`} />
+                  <Send
+                    className={`h-4 w-4 ${isSubmitting ? "animate-pulse" : ""}`}
+                  />
                 </Button>
               </div>
             </div>
