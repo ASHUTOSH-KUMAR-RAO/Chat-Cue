@@ -7,6 +7,7 @@ import { WidgetErrorScreen } from "@/modules/widget/ui/screens/widget-screen-err
 import { WidgetLoadingScreen } from "../screens/widget-loading-screen";
 import { WidgetSellectionScreen } from "../screens/widget-selection-screen";
 import { WidgetChatScreen } from "../screens/widget-chat-screen";
+import { WidgetInboxScreen } from "../screens/widget-inbox-screen";
 
 interface Props {
   organizationId: string | null;
@@ -20,7 +21,7 @@ const WidgetView = ({ organizationId }: Props) => {
     loading: <WidgetLoadingScreen organizationId={organizationId} />,
     auth: <WidgetAuthScreen />,
     voice: <p>Todo voice</p>,
-    inbox: <p>Todo inbox</p>,
+    inbox: <WidgetInboxScreen />,
     selection: <WidgetSellectionScreen />,
     chat: <WidgetChatScreen />,
     contact: <p>Todo: Contact</p>,
