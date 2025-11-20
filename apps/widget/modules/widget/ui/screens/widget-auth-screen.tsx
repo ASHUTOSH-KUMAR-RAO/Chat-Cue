@@ -18,6 +18,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import {
   contactSessionIdAtomFamily,
   organizationIdAtom,
+  screenAtom,
 } from "../../atoms/widget-atoms";
 import { useEffect, useState } from "react";
 
@@ -67,6 +68,7 @@ const Particle = ({ delay }: { delay: number }) => {
 };
 
 export const WidgetAuthScreen = () => {
+  const setScreen = useSetAtom(screenAtom);
   const organizationId = useAtomValue(organizationIdAtom);
   const setContactSessionId = useSetAtom(
     contactSessionIdAtomFamily(organizationId || "")
@@ -108,6 +110,7 @@ export const WidgetAuthScreen = () => {
       organizationId,
     });
     setContactSessionId(contactSessionId);
+    setScreen("selection");
   };
 
   return (
