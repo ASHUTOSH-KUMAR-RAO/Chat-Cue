@@ -5,14 +5,13 @@ export const getCountryFromTimezone = ({ timezone }: { timezone?: string }) => {
     return null;
   }
 
-  const timeszoneInfo = ct.getTimezone(timezone);
-  if (!timeszoneInfo?.countries.length) {
+  const timezoneInfo = ct.getTimezone(timezone);
+  if (!timezoneInfo?.countries.length) {
     return null;
   }
 
-  const countryCode = timeszoneInfo.countries[0];
-
-  const country = ct.getCountry(countryCode as string);
+  const countryCode = timezoneInfo.countries[0] as string;
+  const country = ct.getCountry(countryCode);
 
   return {
     code: countryCode,
@@ -20,10 +19,24 @@ export const getCountryFromTimezone = ({ timezone }: { timezone?: string }) => {
   };
 };
 
+export const getCountryFlagUrl = ({ countryCode }: { countryCode: string }) => {
+  // Ensure country code is valid and exactly 2 characters (ISO alpha-2)
+  if (!countryCode || countryCode.length !== 2) {
+    return null;
+  }
 
-export const getCountaryFlagUrl = ({countryCode}:{countryCode:string})=>{
+  return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
+};
 
-  return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`
-}
+// Usage with error handling:
+export const getFlagForTimezone = (timezone?: string) => {
+  const countryInfo = getCountryFromTimezone({ timezone });
+
+  if (!countryInfo) {
+    return null;
+  }
+
+  return getCountryFlagUrl({ countryCode: countryInfo.code });
+};
 
 // https://flagcdn.com,ye ek bhramastra website jaha se humko sabhi company ke flag mill jayenge
