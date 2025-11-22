@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  getCountaryFlagUrl,
-  getCountryFromTimezone,
-} from "@/lib/country-utils";
+import { getCountryFlagUrl, getCountryFromTimezone } from "@/lib/country-utils";
 import { api } from "@workspace/backend/_generated/api";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import {
@@ -13,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { useQuery } from "convex/react";
 import {
@@ -21,9 +19,11 @@ import {
   CheckIcon,
   CornerUpLeftIcon,
   ListIcon,
+  Loader2Icon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useMemo } from "react";
 
 import { DicebearAvatar } from "@workspace/ui/components/dicebear-avatar";
 
@@ -32,36 +32,53 @@ import { formatDistanceToNow } from "date-fns";
 import { ConversationStatusIcon } from "@workspace/ui/components/conversation-status-icon";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { statusFilterAtom } from "../../atoms";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+
+const ITEMS_PER_PAGE = 10;
 
 export const ConversationsPanel = () => {
   const pathname = usePathname();
 
   const statusFilter = useAtomValue(statusFilterAtom);
-
   const setStatusFilter = useSetAtom(statusFilterAtom);
+
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+
   const rawConversations = useQuery(api.private.conversations.getMany, {
     status: statusFilter === "all" ? undefined : (statusFilter as any),
   });
 
-  const conversations: any[] = Array.isArray(rawConversations)
+  const allConversations: any[] = Array.isArray(rawConversations)
     ? rawConversations
     : (rawConversations?.page ?? []);
+
+  // Client-side pagination
+  const displayedConversations = useMemo(() => {
+    return allConversations.slice(0, displayCount);
+  }, [allConversations, displayCount]);
+
+  const hasMore = displayCount < allConversations.length;
+  const isLoading = rawConversations === undefined;
+
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
+  };
+
+  // Reset display count when filter changes
+  const handleFilterChange = (value: string) => {
+    setDisplayCount(ITEMS_PER_PAGE);
+    setStatusFilter(value as "unresolved" | "escalated" | "resolved" | "all");
+  };
 
   return (
     <div className="flex h-full w-full flex-col bg-background text-sidebar-foreground">
       {/* Filter Section */}
-      <div className="shrink-0 border-b p-2">
+      <div className="shrink-0 border-b p-2.5">
         <Select
           defaultValue="all"
-          onValueChange={(value) =>
-            setStatusFilter(
-              value as "unresolved" | "escalated" | "resolved" | "all"
-            )
-          }
+          onValueChange={handleFilterChange}
           value={statusFilter}
         >
-          <SelectTrigger className="h-8 border-none shadow-none ring-0 hover:bg-accent hover:text-accent-foreground focus-visible:ring-0">
+          <SelectTrigger className="h-9 border-none shadow-none ring-0 hover:bg-accent/50">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
@@ -96,74 +113,136 @@ export const ConversationsPanel = () => {
       {/* Conversations List */}
       <ScrollArea className="flex-1">
         <div className="flex w-full flex-col">
-          {conversations.map((conversation: any) => {
-            const isLastMessageOperator =
-              conversation.lastMessage?.message?.role !== "user";
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
 
-            const country = getCountryFromTimezone(
-              conversation.contactSession.metadata?.timezone as any
-            );
+          {/* Empty State */}
+          {!isLoading && allConversations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 rounded-full bg-muted p-4">
+                <ListIcon className="size-8 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-semibold text-foreground">
+                No conversations found
+              </p>
+              <p className="mt-2 max-w-[250px] text-sm text-muted-foreground">
+                Try changing your filter to see more conversations
+              </p>
+            </div>
+          )}
 
-            const countryFlagUrl = country?.code
-              ? getCountaryFlagUrl({ countryCode: country.code })
-              : undefined;
+          {/* Conversations */}
+          {!isLoading &&
+            displayedConversations.map((conversation: any) => {
+              const isLastMessageOperator =
+                conversation.lastMessage?.message?.role !== "user";
 
-            return (
-              <Link
-                href={`/conversations/${conversation._id}`}
-                key={conversation._id}
-                className={cn(
-                  "relative flex cursor-pointer items-start gap-3 border-b p-4 py-5 text-sm leading-tight hover:bg-accent hover:text-accent-foreground",
-                  pathname === `/conversations/${conversation._id}` &&
-                    "bg-accent text-accent-foreground"
-                )}
-              >
-                {/* Active indicator line */}
-                <div
+              const timezone = conversation.contactSession.metadata?.timezone;
+              const country = getCountryFromTimezone({ timezone });
+              const countryFlagUrl = country?.code
+                ? getCountryFlagUrl({ countryCode: country.code })
+                : undefined;
+
+              const isActive =
+                pathname === `/conversations/${conversation._id}`;
+
+              return (
+                <Link
+                  href={`/conversations/${conversation._id}`}
+                  key={conversation._id}
                   className={cn(
-                    "absolute left-0 top-1/2 h-[64%] w-1 -translate-y-1/2 rounded-r-full bg-neutral-300 opacity-0 transition-opacity",
-                    pathname === `/conversations/${conversation._id}` &&
-                      "opacity-100"
+                    "group relative flex cursor-pointer items-start gap-3 border-b p-4 transition-all hover:bg-accent/80",
+                    isActive && "bg-accent/50"
                   )}
-                />
-                <DicebearAvatar
-                  seed={conversation.contactSession._id}
-                  badgeImageUrl={countryFlagUrl}
-                  className="shrink-0"
-                  size={40}
-                />
-                <div className="flex-1">
+                >
+                  {/* Active Indicator */}
                   <div
-                    className="flex w-full items-center gap-2
-                    "
-                  >
-                    <span className="truncate font-bold">
-                      {conversation.contactSession.name}
-                    </span>
-                    <span className="ml-auto shrink-0 text-muted-foreground text-xs">
-                      {formatDistanceToNow(conversation._creationTime)}
-                    </span>
+                    className={cn(
+                      "absolute left-0 top-1/2 h-[70%] w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity",
+                      isActive && "opacity-100"
+                    )}
+                  />
+
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <DicebearAvatar
+                      seed={conversation.contactSession._id}
+                      badgeImageUrl={countryFlagUrl ?? undefined}
+                      className="shrink-0"
+                      size={40}
+                    />
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <div className="flex w-0 grow items-center gap-1">
-                      {isLastMessageOperator && (
-                        <CornerUpLeftIcon className="size-3 shrink-0 text-muted-foreground" />
-                      )}
+
+                  {/* Content Section */}
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex w-full items-center gap-2">
                       <span
                         className={cn(
-                          "line-clamp-1 text-muted-foreground text-xs",
-                          !isLastMessageOperator && "font-bold text-white"
+                          "truncate font-semibold",
+                          isActive ? "text-foreground" : "text-foreground/90"
                         )}
                       >
-                        {conversation.lastMessage?.text}
+                        {conversation.contactSession.name}
+                      </span>
+                      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                        {formatDistanceToNow(conversation._creationTime)}
                       </span>
                     </div>
-                    <ConversationStatusIcon status={conversation.status} />
+
+                    {/* Message Preview */}
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <div className="flex w-0 grow items-center gap-1.5">
+                        {isLastMessageOperator && (
+                          <CornerUpLeftIcon className="size-3 shrink-0 text-muted-foreground" />
+                        )}
+                        <span
+                          className={cn(
+                            "line-clamp-1 text-xs",
+                            !isLastMessageOperator
+                              ? "font-bold text-foreground"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {conversation.lastMessage?.text}
+                        </span>
+                      </div>
+
+                      {/* Status Icon */}
+                      <ConversationStatusIcon status={conversation.status} />
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+
+          {/* Total Count Display - Before Load More */}
+          {!isLoading && allConversations.length > 0 && (
+            <div className="flex items-center justify-center border-b p-3 text-xs text-muted-foreground">
+              Showing {displayedConversations.length} of{" "}
+              {allConversations.length} conversations
+            </div>
+          )}
+
+          {/* Load More Button - At Bottom */}
+          {!isLoading && hasMore && (
+            <div className="flex items-center justify-center p-4">
+              <Button
+                onClick={handleLoadMore}
+                variant="ghost"
+                size="sm"
+                className="w-full hover:bg-accent"
+              >
+                <span className="mr-2">Load More</span>
+                <span className="text-xs text-muted-foreground">
+                  ({allConversations.length - displayCount} remaining)
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>

@@ -12,12 +12,19 @@ export const ConversationsLayout = ({
 }) => {
   return (
     <ResizablePanelGroup className="h-full flex-1" direction="horizontal">
-      <ResizablePanel defaultSize={30} maxSize={30} minSize={20}>
-        <ConversationsPanel/>
+      <ResizablePanel
+        defaultSize={25}
+        maxSize={35}
+        minSize={20}
+        className="border-r"
+      >
+        <ConversationsPanel />
       </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel className="h-full" defaultSize={70}>
-        {children}
+
+      <ResizableHandle withHandle className="hover:bg-accent/50" />
+
+      <ResizablePanel defaultSize={75} minSize={50}>
+        <div className="h-full w-full">{children}</div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );

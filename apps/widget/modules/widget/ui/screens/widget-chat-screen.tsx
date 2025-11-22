@@ -2,7 +2,6 @@
 
 import { useThreadMessages, toUIMessages } from "@convex-dev/agent/react";
 import { ArrowLeft, Menu, Send } from "lucide-react";
-import { WidgetHeader } from "@/modules/widget/ui/components/widget-header";
 import { useInfinitScroll } from "@workspace/ui/hooks/use-infinite.scroll";
 import {
   InfiniteScrollTrigger,
