@@ -1,9 +1,51 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "../_generated/server";
+import { action, mutation, query } from "../_generated/server";
 import { components, internal } from "../_generated/api";
 import { supportAgent } from "../system/ai/agents/supportAgent";
 import { paginationOptsValidator } from "convex/server";
 import { saveMessage } from "@convex-dev/agent";
+import { generateText } from "ai";
+import { groq } from "@ai-sdk/groq";
+
+export const enhanceResponse = action({
+  args: {
+    prompt: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (identity === null) {
+      throw new ConvexError({
+        code: "UNATHORIZED",
+        message: "Identity not found",
+      });
+    }
+    const orgId = identity.orgId as string;
+
+    if (!orgId) {
+      throw new ConvexError({
+        code: "UNATHORIZED",
+        message: "Organization not found",
+      });
+    }
+
+    const response = await generateText({
+      model: groq("llama-3.3-70b-versatile"),
+      messages: [
+        {
+          role: "system",
+          content:
+            "Enhance the Operator message to be more empathetic and professional while retaining the original meaning. Keep it concise. and clear.",
+        },
+        {
+          role: "user",
+          content: args.prompt,
+        },
+      ],
+    });
+    return response.text;
+  },
+});
 
 export const create = mutation({
   args: {
