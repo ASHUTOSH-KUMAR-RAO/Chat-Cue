@@ -1,8 +1,55 @@
 import { MessageDoc } from "@convex-dev/agent";
 import { ConvexError, v } from "convex/values";
 import { Doc } from "../_generated/dataModel";
-import { query } from "../_generated/server";
+import { mutation, query } from "../_generated/server";
 import { supportAgent } from "../system/ai/agents/supportAgent";
+
+export const updateStatus = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    status: v.union(
+      v.literal("unresolved"),
+      v.literal("escalated"),
+      v.literal("resolved")
+    ),
+  },
+  handler: async (ctx: any, arg: any) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) {
+      throw new ConvexError({
+        code: "UNATHORIZED",
+        message: "Identity not found",
+      });
+    }
+    const orgId = identity.orgId as string;
+
+    if (!orgId) {
+      throw new ConvexError({
+        code: "UNATHORIZED",
+        message: "Organization not found",
+      });
+    }
+
+    const conversation = await ctx.db.get(arg.conversationId);
+
+    if (!conversation) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Conversation not Found",
+      });
+    }
+    if (conversation.organizationId !== orgId) {
+      throw new ConvexError({
+        code: "UNATHORIZED",
+        message: "Invalid Organization Id",
+      });
+    }
+    const updatedConversation = await ctx.db.patch(arg.conversationId, {
+      status: arg.status,
+    });
+    return updatedConversation;
+  },
+});
 
 export const getOne = query({
   args: {
@@ -57,7 +104,7 @@ export const getOne = query({
       contactSession,
     };
   },
-})
+});
 
 export const getMany = query({
   args: {
