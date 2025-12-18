@@ -18,9 +18,11 @@
     "typescript": "latest"
   },
   "dependencies": {
+    "@ai-sdk/cohere": "^2.0.21",
     "@ai-sdk/groq": "^2.0.29",
     "@clerk/backend": "^2.22.0",
     "@convex-dev/agent": "^0.3.0",
+    "@convex-dev/rag": "^0.6.1",
     "ai": "5.0.93",
     "convex": "^1.27.5",
     "convex-helpers": "^0.1.104",
