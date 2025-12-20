@@ -40,7 +40,7 @@ import {
 import { AIResponse } from "@workspace/ui/components/ai/response";
 
 import z from "zod";
-import { Form, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DicebearAvatar } from "@workspace/ui/components/dicebear-avatar";
 import { useState } from "react";
@@ -83,7 +83,7 @@ export const ConversationIdView = ({
     defaultValues: {
       message: "",
     },
-    mode: "onChange", // Yeh important hai - real-time validation ke liye
+    mode: "onChange",
   });
 
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -126,7 +126,6 @@ export const ConversationIdView = ({
         prompt: trimmedMessage,
       });
 
-      // Form reset karo successful submission ke baad
       form.reset();
     } catch (err) {
       console.error("Failed to send message:", err);
@@ -136,7 +135,6 @@ export const ConversationIdView = ({
           : "Failed to send message. Please try again."
       );
     } finally {
-      // Always loading state reset karo
       setIsSubmitting(false);
     }
   };
@@ -144,7 +142,6 @@ export const ConversationIdView = ({
   const isConversationResolved = conversation?.status === "resolved";
   const isLoading = messages.status === "LoadingFirstPage";
 
-  // Submit button enable karo agar message hai aur submitting nahi ho raha
   const messageValue = form.watch("message");
   const canSubmit =
     !isConversationResolved && !isSubmitting && messageValue.trim().length > 0;
@@ -241,60 +238,57 @@ export const ConversationIdView = ({
       )}
 
       <div className="pl-2">
-        <Form {...form}>
-          <AIInput onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="message"
-              disabled={isConversationResolved || isSubmitting}
-              render={({ field }) => (
-                <AIInputTextarea
-                  disabled={
-                    isConversationResolved || isSubmitting || isEnhancing
-                  }
-                  onChange={field.onChange}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (canSubmit) {
-                        form.handleSubmit(onSubmit)();
-                      }
+        <AIInput onSubmit={form.handleSubmit(onSubmit)}>
+          <FormField
+            control={form.control}
+            name="message"
+            render={({ field }) => (
+              <AIInputTextarea
+                disabled={
+                  isConversationResolved || isSubmitting || isEnhancing
+                }
+                onChange={field.onChange}
+                value={field.value}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (canSubmit) {
+                      form.handleSubmit(onSubmit)();
                     }
-                  }}
-                  placeholder={
-                    isConversationResolved
-                      ? "This conversation has been resolved"
-                      : isSubmitting
-                        ? "Sending..."
-                        : "Type your message..."
                   }
-                  value={field.value}
-                />
-              )}
-            />
-            <AIInputToolbar>
-              <AIInputTools>
-                <AIInputButton
-                  onClick={handleEnhanceResponse}
-                  disabled={
-                    isConversationResolved ||
-                    isSubmitting ||
-                    isEnhancing ||
-                    !form.formState.isValid
-                  }
-                >
-                  <Wand2Icon className="h-4 w-4" />
-                  {isEnhancing ? "Enhancing..." : "Enhance"}
-                </AIInputButton>
-              </AIInputTools>
-              <AIInputSubmit
-                disabled={!canSubmit || isEnhancing}
-                type="submit"
-                status="ready"
+                }}
+                placeholder={
+                  isConversationResolved
+                    ? "This conversation has been resolved"
+                    : isSubmitting
+                      ? "Sending..."
+                      : "Type your message..."
+                }
               />
-            </AIInputToolbar>
-          </AIInput>
-        </Form>
+            )}
+          />
+          <AIInputToolbar>
+            <AIInputTools>
+              <AIInputButton
+                onClick={handleEnhanceResponse}
+                disabled={
+                  isConversationResolved ||
+                  isSubmitting ||
+                  isEnhancing ||
+                  !form.formState.isValid
+                }
+              >
+                <Wand2Icon className="h-4 w-4" />
+                {isEnhancing ? "Enhancing..." : "Enhance"}
+              </AIInputButton>
+            </AIInputTools>
+            <AIInputSubmit
+              disabled={!canSubmit || isEnhancing}
+              type="submit"
+              status="ready"
+            />
+          </AIInputToolbar>
+        </AIInput>
       </div>
     </div>
   );
@@ -339,12 +333,11 @@ export const ConversationIdViewLoading = () => {
           <AIInputTextarea
             disabled
             placeholder="Type your response as an operator"
-          >
-            <AIInputToolbar>
-              <AIInputTools />
-              <AIInputSubmit disabled status="ready" />
-            </AIInputToolbar>
-          </AIInputTextarea>
+          />
+          <AIInputToolbar>
+            <AIInputTools />
+            <AIInputSubmit disabled status="ready" />
+          </AIInputToolbar>
         </AIInput>
       </div>
     </div>
