@@ -1,10 +1,9 @@
 
+import { FilesViews } from '@/modules/files/ui/views/files-view'
 import React from 'react'
 
 const Page = () => {
-  return (
-    <div>Files</div>
-  )
+  return <FilesViews/>
 }
 
 export default Page
