@@ -20,6 +20,7 @@ import {
   CornerUpLeftIcon,
   ListIcon,
   Loader2Icon,
+  MessageSquareIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -70,39 +71,39 @@ export const ConversationsPanel = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-background text-sidebar-foreground">
+    <div className="flex h-full w-full flex-col bg-background">
       {/* Filter Section */}
-      <div className="shrink-0 border-b p-2.5">
+      <div className="shrink-0 border-b bg-muted/30 p-3">
         <Select
           defaultValue="all"
           onValueChange={handleFilterChange}
           value={statusFilter}
         >
-          <SelectTrigger className="h-9 border-none shadow-none ring-0 hover:bg-accent/50">
-            <SelectValue placeholder="Filter" />
+          <SelectTrigger className="h-10 border-none bg-background shadow-sm transition-colors hover:bg-accent">
+            <SelectValue placeholder="Filter conversations" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
               <div className="flex items-center gap-2">
                 <ListIcon className="size-4" />
-                <span>All</span>
+                <span>All Conversations</span>
               </div>
             </SelectItem>
             <SelectItem value="unresolved">
               <div className="flex items-center gap-2">
-                <ArrowRightIcon className="size-4" />
+                <ArrowRightIcon className="size-4 text-orange-500" />
                 <span>Unresolved</span>
               </div>
             </SelectItem>
             <SelectItem value="escalated">
               <div className="flex items-center gap-2">
-                <ArrowUpIcon className="size-4" />
+                <ArrowUpIcon className="size-4 text-red-500" />
                 <span>Escalated</span>
               </div>
             </SelectItem>
             <SelectItem value="resolved">
               <div className="flex items-center gap-2">
-                <CheckIcon className="size-4" />
+                <CheckIcon className="size-4 text-green-500" />
                 <span>Resolved</span>
               </div>
             </SelectItem>
@@ -115,21 +116,22 @@ export const ConversationsPanel = () => {
         <div className="flex w-full flex-col">
           {/* Loading State */}
           {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2Icon className="size-8 animate-spin text-primary" />
+              <p className="mt-3 text-sm text-muted-foreground">
+                Loading conversations...
+              </p>
             </div>
           )}
 
           {/* Empty State */}
           {!isLoading && allConversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 rounded-full bg-muted p-4">
-                <ListIcon className="size-8 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+              <div className="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+                <MessageSquareIcon className="size-8 text-muted-foreground" />
               </div>
-              <p className="text-lg font-semibold text-foreground">
-                No conversations found
-              </p>
-              <p className="mt-2 max-w-[250px] text-sm text-muted-foreground">
+              <p className="text-base font-semibold">No conversations found</p>
+              <p className="mt-2 max-w-[280px] text-sm text-muted-foreground">
                 Try changing your filter to see more conversations
               </p>
             </div>
@@ -155,26 +157,37 @@ export const ConversationsPanel = () => {
                   href={`/conversations/${conversation._id}`}
                   key={conversation._id}
                   className={cn(
-                    "group relative flex cursor-pointer items-start gap-3 border-b p-4 transition-all hover:bg-accent/80",
-                    isActive && "bg-accent/50"
+                    "group relative flex cursor-pointer items-start gap-3 border-b px-4 py-3.5 transition-all duration-200",
+                    isActive
+                      ? "bg-primary/10 hover:bg-primary/15"
+                      : "hover:bg-muted/50"
                   )}
                 >
                   {/* Active Indicator */}
                   <div
                     className={cn(
-                      "absolute left-0 top-1/2 h-[70%] w-1 -translate-y-1/2 rounded-r-full bg-primary opacity-0 transition-opacity",
-                      isActive && "opacity-100"
+                      "absolute left-0 top-0 h-full w-1 bg-primary transition-all duration-200",
+                      isActive ? "opacity-100" : "opacity-0"
                     )}
                   />
 
                   {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <DicebearAvatar
-                      seed={conversation.contactSession._id}
-                      badgeImageUrl={countryFlagUrl ?? undefined}
-                      className="shrink-0"
-                      size={40}
-                    />
+                  <div className="relative shrink-0 pt-0.5">
+                    <div
+                      className={cn(
+                        "rounded-full ring-2 transition-all",
+                        isActive
+                          ? "ring-primary/30"
+                          : "ring-transparent group-hover:ring-border"
+                      )}
+                    >
+                      <DicebearAvatar
+                        seed={conversation.contactSession._id}
+                        badgeImageUrl={countryFlagUrl ?? undefined}
+                        className="shrink-0"
+                        size={40}
+                      />
+                    </div>
                   </div>
 
                   {/* Content Section */}
@@ -182,28 +195,30 @@ export const ConversationsPanel = () => {
                     <div className="flex w-full items-center gap-2">
                       <span
                         className={cn(
-                          "truncate font-semibold",
+                          "truncate text-sm font-semibold transition-colors",
                           isActive ? "text-foreground" : "text-foreground/90"
                         )}
                       >
                         {conversation.contactSession.name}
                       </span>
                       <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-                        {formatDistanceToNow(conversation._creationTime)}
+                        {formatDistanceToNow(conversation._creationTime, {
+                          addSuffix: false,
+                        })}
                       </span>
                     </div>
 
                     {/* Message Preview */}
-                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                    <div className="mt-2 flex items-center justify-between gap-2">
                       <div className="flex w-0 grow items-center gap-1.5">
                         {isLastMessageOperator && (
-                          <CornerUpLeftIcon className="size-3 shrink-0 text-muted-foreground" />
+                          <CornerUpLeftIcon className="size-3.5 shrink-0 text-muted-foreground" />
                         )}
                         <span
                           className={cn(
-                            "line-clamp-1 text-xs",
+                            "line-clamp-1 text-xs transition-colors",
                             !isLastMessageOperator
-                              ? "font-bold text-foreground"
+                              ? "font-semibold text-foreground"
                               : "text-muted-foreground"
                           )}
                         >
@@ -212,31 +227,33 @@ export const ConversationsPanel = () => {
                       </div>
 
                       {/* Status Icon */}
-                      <ConversationStatusIcon status={conversation.status} />
+                      <div className="shrink-0">
+                        <ConversationStatusIcon status={conversation.status} />
+                      </div>
                     </div>
                   </div>
                 </Link>
               );
             })}
 
-          {/* Total Count Display - Before Load More */}
+          {/* Total Count Display */}
           {!isLoading && allConversations.length > 0 && (
-            <div className="flex items-center justify-center border-b p-3 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center border-b bg-muted/30 py-2.5 text-xs font-medium text-muted-foreground">
               Showing {displayedConversations.length} of{" "}
-              {allConversations.length} conversations
+              {allConversations.length}
             </div>
           )}
 
-          {/* Load More Button - At Bottom */}
+          {/* Load More Button */}
           {!isLoading && hasMore && (
-            <div className="flex items-center justify-center p-4">
+            <div className="border-b p-3">
               <Button
                 onClick={handleLoadMore}
                 variant="ghost"
                 size="sm"
-                className="w-full hover:bg-accent"
+                className="w-full gap-2 hover:bg-accent"
               >
-                <span className="mr-2">Load More</span>
+                <span>Load More</span>
                 <span className="text-xs text-muted-foreground">
                   ({allConversations.length - displayCount} remaining)
                 </span>

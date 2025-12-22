@@ -6,6 +6,7 @@ import { paginationOptsValidator } from "convex/server";
 import { saveMessage } from "@convex-dev/agent";
 import { generateText } from "ai";
 import { groq } from "@ai-sdk/groq";
+import { OPERATOR_MESSAGE_ENHANCEMENT_PROMPT } from "../system/ai/constants";
 
 export const enhanceResponse = action({
   args: {
@@ -35,7 +36,7 @@ export const enhanceResponse = action({
         {
           role: "system",
           content:
-            "Enhance the Operator message to be more empathetic and professional while retaining the original meaning. Keep it concise. and clear.",
+            OPERATOR_MESSAGE_ENHANCEMENT_PROMPT,
         },
         {
           role: "user",

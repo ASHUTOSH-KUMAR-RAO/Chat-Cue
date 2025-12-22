@@ -11,21 +11,31 @@ export const ConversationsLayout = ({
   children: React.ReactNode;
 }) => {
   return (
-    <ResizablePanelGroup className="h-full flex-1" direction="horizontal">
-      <ResizablePanel
-        defaultSize={25}
-        maxSize={35}
-        minSize={20}
-        className="border-r"
-      >
-        <ConversationsPanel />
-      </ResizablePanel>
+    <div className="flex h-screen w-full overflow-hidden">
+      <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+        {/* Left Panel - Conversations List */}
+        <ResizablePanel
+          defaultSize={30}
+          maxSize={40}
+          minSize={20}
+          className="bg-muted/30"
+        >
+          <div className="h-full overflow-hidden border-r">
+            <ConversationsPanel />
+          </div>
+        </ResizablePanel>
 
-      <ResizableHandle withHandle className="hover:bg-accent/50" />
+        {/* Resizable Handle */}
+        <ResizableHandle
+          withHandle
+          className="w-1 bg-border transition-colors hover:bg-primary/50 active:bg-primary data-[resize-handle-state=drag]:bg-primary"
+        />
 
-      <ResizablePanel defaultSize={75} minSize={50}>
-        <div className="h-full w-full">{children}</div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        {/* Right Panel - Conversation Details */}
+        <ResizablePanel defaultSize={70} minSize={50} className="bg-background">
+          <div className="h-full w-full overflow-hidden">{children}</div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   );
 };
