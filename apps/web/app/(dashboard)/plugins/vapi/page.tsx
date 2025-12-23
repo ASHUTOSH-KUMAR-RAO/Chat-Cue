@@ -1,9 +1,10 @@
 
+import { VapiView } from '@/modules/plugin/ui/views/vapi-view'
 import React from 'react'
 
 const Page = () => {
   return (
-    <div>Vapi</div>
+    <VapiView/>
   )
 }
 
