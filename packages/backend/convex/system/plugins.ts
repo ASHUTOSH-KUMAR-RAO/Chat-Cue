@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "../_generated/server";
+import { internalMutation, internalQuery } from "../_generated/server";
 
 export const upsert = internalMutation({
   args: {
@@ -29,7 +29,7 @@ export const upsert = internalMutation({
   },
 });
 
-export const getByOrganizationIdAndService = internalMutation({
+export const getByOrganizationIdAndService = internalQuery({
   args: {
     service: v.union(v.literal("vapi")),
     organizationId: v.string(),
