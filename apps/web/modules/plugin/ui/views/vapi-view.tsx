@@ -37,6 +37,7 @@ import { useForm } from "react-hook-form";
 
 import { toast } from "sonner";
 import z from "zod";
+import { VapiConnectedView } from "../components/vapi-connected-view";
 
 const vapiFeatures: Feature[] = [
   {
@@ -91,8 +92,8 @@ const VapiPluginForm = ({
           privateApiKey: values.privateApiKey,
         },
       });
-      toast.success("VAPI plugin connected successfully!");
       setOpen(false);
+      toast.success("VAPI plugin connected successfully!");
     } catch (error) {
       console.error("Error connecting VAPI plugin:", error);
       toast.error("Failed to connect VAPI plugin. Please try again.");
@@ -161,6 +162,48 @@ const VapiPluginForm = ({
     </Dialog>
   );
 };
+const VapiPluginRemoveForm = ({
+  open,
+  setOpen,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}) => {
+  const removePlugin = useMutation(api.private.plugins.remove);
+
+  const onSubmit = async () => {
+    try {
+      await removePlugin({
+        service: "vapi",
+      });
+      setOpen(false);
+      toast.success("VAPI plugin disconnected successfully!");
+    } catch (error) {
+      console.error("Error connecting VAPI plugin:", error);
+      toast.error("Failed to connect VAPI plugin. Please try again.");
+    }
+  };
+  return (
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Disconnect VAPI Plugin</DialogTitle>
+        </DialogHeader>
+        <DialogDescription>
+         Are you sure you want to disconnect the VAPI plugin? This action cannot be undone.
+        </DialogDescription>
+        <DialogFooter>
+          <Button
+            variant="destructive"
+            onClick={onSubmit}
+          >
+            Disconnect VAPI Plugin
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const VapiView = () => {
   const vapiPlugin = useQuery(api.private.plugins.getOne, { service: "vapi" });
@@ -177,6 +220,7 @@ export const VapiView = () => {
   return (
     <>
       <VapiPluginForm open={connectOpen} setOpen={setConnectOpen} />
+      <VapiPluginRemoveForm open={removeOpen} setOpen={setRemoveOpen} />
       <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 p-6 md:p-8">
         <div className="mx-auto w-full max-w-3xl">
           {/* Header Section */}
@@ -218,7 +262,7 @@ export const VapiView = () => {
           {/* Plugin Card */}
           <div className="mt-8">
             {vapiPlugin ? (
-              <p>Connected!!</p>
+              <VapiConnectedView onDisconnect={handleSubmit}/>
             ) : (
               <PluginCard
                 serviceImage="/vapi.jpg"
