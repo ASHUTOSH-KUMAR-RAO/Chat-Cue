@@ -62,6 +62,6 @@ export const useVapiPhoneNumbers = (): {
       }
     };
     fetchData();
-  }, [getPhoneNumbers]);
+  }, []);
   return { data, isLoading, error };
 };
