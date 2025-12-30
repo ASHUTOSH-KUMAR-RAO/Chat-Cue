@@ -1,12 +1,13 @@
 "use client";
-
-import { useThreadMessages, toUIMessages } from "@convex-dev/agent/react";
-import { ArrowLeft, Menu, Send } from "lucide-react";
-import { useInfinitScroll } from "@workspace/ui/hooks/use-infinite.scroll";
 import {
-  InfiniteScrollTrigger,
-} from "@workspace/ui/components/infinite-scroll-trigger";
-import {DicebearAvatar} from "@workspace/ui/components/dicebear-avatar"
+  AISuggestion,
+  AISuggestions,
+} from "@workspace/ui/components/ai/suggestion";
+import { useThreadMessages, toUIMessages } from "@convex-dev/agent/react";
+import { ArrowLeft, Menu, Send, Loader2 } from "lucide-react";
+import { useInfinitScroll } from "@workspace/ui/hooks/use-infinite.scroll";
+import { InfiniteScrollTrigger } from "@workspace/ui/components/infinite-scroll-trigger";
+import { DicebearAvatar } from "@workspace/ui/components/dicebear-avatar";
 import { Button } from "@workspace/ui/components/button";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -14,6 +15,7 @@ import {
   conversationIdAtom,
   organizationIdAtom,
   screenAtom,
+  widgetSettingsAtom,
 } from "../../atoms/widget-atoms";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@workspace/backend/_generated/api";
@@ -25,12 +27,7 @@ import {
 
 import { Form, FormField } from "@workspace/ui/components/form";
 
-import {
-  AIInput,
-  AIInputTextarea,
-  AIInputTools,
-  AIInputToolbar,
-} from "@workspace/ui/components/ai/input";
+import { AIInputTextarea } from "@workspace/ui/components/ai/input";
 
 import {
   AIMessage,
@@ -42,55 +39,18 @@ import { AIResponse } from "@workspace/ui/components/ai/response";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 
 const formSchema = z.object({
   message: z.string().min(1, "Message is Required"),
 });
-
-// Black & White Particle Component
-const Particle = ({ delay }: { delay: number }) => {
-  const [position, setPosition] = useState({
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-  });
-  const isWhite = Math.random() > 0.5;
-  const size = Math.random() * 4 + 2;
-
-  useEffect(() => {
-    const interval = setInterval(
-      () => {
-        setPosition({
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-        });
-      },
-      8000 + Math.random() * 4000
-    );
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div
-      className={`absolute rounded-full ${isWhite ? "bg-white" : "bg-black"} opacity-20 blur-[1px]`}
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        transition: `all ${8 + Math.random() * 4}s ease-in-out`,
-        animationDelay: `${delay}ms`,
-      }}
-    />
-  );
-};
 
 export const WidgetChatScreen = () => {
   const setScreen = useSetAtom(screenAtom);
   const setConversationId = useSetAtom(conversationIdAtom);
   const conversationId = useAtomValue(conversationIdAtom);
   const organizationId = useAtomValue(organizationIdAtom);
+  const widgetSettings = useAtomValue(widgetSettingsAtom);
   const contactSessionId = useAtomValue(
     contactSessionIdAtomFamily(organizationId || "")
   );
@@ -101,6 +61,17 @@ export const WidgetChatScreen = () => {
     setConversationId(null);
     setScreen("selection");
   };
+
+  const suggestions = useMemo(() => {
+    if (!widgetSettings) {
+      return [];
+    }
+    return Object.keys(widgetSettings.defaultSuggestions).map((key) => {
+      return widgetSettings.defaultSuggestions[
+        key as keyof typeof widgetSettings.defaultSuggestions
+      ];
+    });
+  }, [widgetSettings]);
 
   const conversation = useQuery(
     api.public.conversations.getOne,
@@ -162,45 +133,39 @@ export const WidgetChatScreen = () => {
 
   if (conversation === undefined) {
     return (
-      <div className="flex h-full flex-col relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        {/* Black & White Particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
-            <Particle key={i} delay={i * 150} />
-          ))}
-        </div>
-
+      <div className="flex h-full flex-col bg-background">
         {/* Header */}
-        <div className="relative backdrop-blur-xl bg-black/60 border-b border-white/10 shadow-2xl">
+        <div className="border-b bg-card">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-x-3">
+            <div className="flex items-center gap-3">
               <Button
                 onClick={onBack}
                 size="icon"
                 variant="ghost"
-                className="hover:bg-white/10 transition-all duration-300 hover:scale-110 text-white/70 hover:text-white"
+                className="size-9"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="size-4" />
               </Button>
-              <div className="space-y-1">
-                <p className="font-semibold text-white">Chat</p>
+              <div>
+                <p className="font-semibold">Chat</p>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
-                  <span className="text-xs text-white/50">Loading...</span>
+                  <div className="size-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-xs text-muted-foreground">
+                    Loading...
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Loading */}
-        <div className="flex flex-1 items-center justify-center p-8 relative z-10">
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-            <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-white/90 font-medium">Loading conversation...</p>
+        {/* Loading State */}
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Loading conversation...
+            </p>
           </div>
         </div>
       </div>
@@ -208,46 +173,35 @@ export const WidgetChatScreen = () => {
   }
 
   return (
-    <div className="flex h-full flex-col relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-      {/* Black & White Animated Particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <Particle key={i} delay={i * 150} />
-        ))}
-      </div>
-
-      {/* Header - Glass Effect */}
-      <div className="relative backdrop-blur-xl bg-black/60 border-b border-white/10 shadow-2xl z-20">
+    <div className="flex h-full flex-col bg-background">
+      {/* Header */}
+      <div className="border-b bg-card shadow-sm">
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-x-3">
+          <div className="flex items-center gap-3">
             <Button
               onClick={onBack}
               size="icon"
               variant="ghost"
-              className="hover:bg-white/10 transition-all duration-300 hover:scale-110 active:scale-95 text-white/70 hover:text-white"
+              className="size-9"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="size-4" />
             </Button>
-            <div className="space-y-0.5">
-              <p className="font-semibold text-white">Chat</p>
+            <div>
+              <p className="font-semibold">Chat</p>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
-                <span className="text-xs text-white/50">Active</span>
+                <div className="size-2 rounded-full bg-green-500" />
+                <span className="text-xs text-muted-foreground">Active</span>
               </div>
             </div>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="hover:bg-white/10 transition-all duration-300 hover:rotate-90 text-white/70 hover:text-white"
-          >
-            <Menu className="h-5 w-5" />
+          <Button size="icon" variant="ghost" className="size-9">
+            <Menu className="size-4" />
           </Button>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-hidden relative z-10">
+      <div className="flex-1 overflow-hidden">
         <AIConversation className="h-full">
           <AIConversationContent className="p-4 space-y-3">
             <InfiniteScrollTrigger
@@ -256,64 +210,50 @@ export const WidgetChatScreen = () => {
               onLoadMore={handleLoadMore}
               ref={topElementRef}
             />
-            {toUIMessages(messages.results || []).map((message, index) => {
+            {toUIMessages(messages.results || []).map((message) => {
               const isUser = message.role === "user";
               return (
-                <div
+                <AIMessage
                   key={message.id}
-                  className="animate-in fade-in slide-in-from-bottom-3 duration-500"
-                  style={{ animationDelay: `${index * 40}ms` }}
+                  from={isUser ? "user" : "assistant"}
+                  className={
+                    isUser ? "ml-auto max-w-[85%]" : "mr-auto max-w-[85%]"
+                  }
                 >
-                  <AIMessage
-                    from={isUser ? "user" : "assistant"}
-                    className={`
-                      group transition-all duration-300 hover:scale-[1.01]
-                      ${isUser ? "ml-auto max-w-[80%]" : "mr-auto max-w-[80%]"}
-                    `}
+                  <AIMessageContent
+                    className={`rounded-2xl px-4 py-3 shadow-sm ${
+                      isUser ? "bg-primary text-primary-foreground" : "bg-muted"
+                    }`}
                   >
-                    <AIMessageContent
-                      className={`
-                        rounded-2xl px-4 py-3 shadow-xl transition-all duration-300 group-hover:shadow-2xl
-                        ${
-                          isUser
-                            ? "bg-gradient-to-br from-gray-200 to-gray-300 text-black shadow-gray-400/30 border border-gray-300/20"
-                            : "backdrop-blur-xl bg-black/40 border border-white/10 text-white shadow-black/40"
-                        }
-                      `}
-                    >
-                      <AIResponse className="text-inherit text-[15px] leading-relaxed">
-                        {(message as any).content}
-                      </AIResponse>
-                    </AIMessageContent>
-                    {message.role === "assistant" && (
-                      <DicebearAvatar
-                        imageUrl="/avatar.svg"
-                        seed="assistant"
-                        size={32}
-                      />
-                    )}
-                  </AIMessage>
-                </div>
+                    <AIResponse className="text-sm leading-relaxed">
+                      {(message as any).content}
+                    </AIResponse>
+                  </AIMessageContent>
+                  {!isUser && (
+                    <DicebearAvatar
+                      imageUrl="/avatar.svg"
+                      seed="assistant"
+                      size={32}
+                    />
+                  )}
+                </AIMessage>
               );
             })}
 
             {/* Typing Indicator */}
             {isSubmitting && (
-              <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 mr-auto max-w-[80%]">
-                <div className="backdrop-blur-xl bg-black/40 border border-white/10 rounded-2xl px-4 py-3 shadow-xl">
+              <div className="mr-auto max-w-[85%]">
+                <div className="bg-muted rounded-2xl px-4 py-3 shadow-sm">
                   <div className="flex gap-1.5">
+                    <div className="size-2 rounded-full bg-foreground/40 animate-bounce" />
                     <div
-                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    ></div>
-                    <div
-                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
+                      className="size-2 rounded-full bg-foreground/40 animate-bounce"
                       style={{ animationDelay: "150ms" }}
-                    ></div>
+                    />
                     <div
-                      className="h-2 w-2 rounded-full bg-white/70 animate-bounce"
+                      className="size-2 rounded-full bg-foreground/40 animate-bounce"
                       style={{ animationDelay: "300ms" }}
-                    ></div>
+                    />
                   </div>
                 </div>
               </div>
@@ -322,8 +262,29 @@ export const WidgetChatScreen = () => {
         </AIConversation>
       </div>
 
-      {/* Input Area - Glass Effect */}
-      <div className="relative backdrop-blur-xl bg-black/60 border-t border-white/10 shadow-2xl z-20">
+      {/* Suggestions */}
+      <AISuggestions className="flex w-full items-end p-2">
+        {suggestions.map((suggestion) => {
+          if (!suggestion) return null;
+          return (
+            <AISuggestion
+              key={suggestion}
+              onClick={() => {
+                form.setValue("message", suggestion, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                });
+                form.handleSubmit(onSubmit)();
+              }}
+              suggestion={suggestion}
+            />
+          );
+        })}
+      </AISuggestions>
+
+      {/* Input Area */}
+      <div className="border-t bg-card shadow-sm">
         <Form {...(form as any)}>
           <div
             className="p-4"
@@ -332,7 +293,7 @@ export const WidgetChatScreen = () => {
               form.handleSubmit(onSubmit)();
             }}
           >
-            <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 shadow-xl hover:border-white/20 focus-within:border-white/30 transition-all duration-300">
+            <div className="relative rounded-xl border bg-background">
               <FormField
                 control={form.control as any}
                 name="message"
@@ -355,7 +316,7 @@ export const WidgetChatScreen = () => {
                         : "Type your message..."
                     }
                     value={field.value}
-                    className="border-0 bg-transparent focus-visible:ring-0 resize-none min-h-[56px] text-white placeholder:text-white/30 px-4 pt-4"
+                    className="border-0 bg-transparent focus-visible:ring-0 resize-none min-h-[56px] px-4 pt-4"
                   />
                 )}
               />
@@ -369,11 +330,13 @@ export const WidgetChatScreen = () => {
                   onClick={form.handleSubmit(onSubmit)}
                   type="button"
                   size="icon"
-                  className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 text-black hover:from-gray-400 hover:to-gray-500 shadow-lg shadow-gray-500/30 hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="size-10 rounded-lg shadow-sm"
                 >
-                  <Send
-                    className={`h-4 w-4 ${isSubmitting ? "animate-pulse" : ""}`}
-                  />
+                  {isSubmitting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
                 </Button>
               </div>
             </div>

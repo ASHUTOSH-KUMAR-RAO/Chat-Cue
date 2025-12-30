@@ -7,6 +7,7 @@ import { resolveConversation } from "../system/ai/tools/resolveConversation";
 import { escalateConversation } from "../system/ai/tools/escalateConversation";
 import { saveMessage } from "@convex-dev/agent";
 import { search } from "../system/ai/tools/search";
+
 export const create = action({
   args: {
     prompt: v.string(),
@@ -42,7 +43,6 @@ export const create = action({
       });
     }
 
-    // Fixed: Changed = to === for comparison
     if (conversation.status === "resolved") {
       throw new ConvexError({
         code: "BAD_REQUEST",
@@ -50,26 +50,24 @@ export const create = action({
       });
     }
 
-    const shouldTriggerAgent = conversation.status === "unresolved" ;
+    const shouldTriggerAgent = conversation.status === "unresolved";
 
     if (shouldTriggerAgent) {
-    await supportAgent.generateText(
-      ctx,
-      { threadId: args.threadId },
-      { prompt: args.prompt,
-        tools:{
-          resolveConversation,
-          escalateConversation,
-          search
+      // ✅✅✅ ARRAY FORMAT - COPY THIS EXACTLY! ✅✅✅
+      await supportAgent.generateText(
+        ctx,
+        { threadId: args.threadId },
+        {
+          prompt: args.prompt,
+          tools: [resolveConversation, escalateConversation, search] as any, // SQUARE BRACKETS!
         }
-       }
-    );
-  } else {
-    await saveMessage(ctx,components.agent, {
-      threadId: args.threadId,
-      prompt: args.prompt,
-    });
-  }
+      );
+    } else {
+      await saveMessage(ctx, components.agent, {
+        threadId: args.threadId,
+        prompt: args.prompt,
+      });
+    }
   },
 });
 
@@ -77,12 +75,11 @@ export const getMany = query({
   args: {
     threadId: v.string(),
     paginationOpts: paginationOptsValidator,
-    contactSessionId: v.id("contactSessions"), // Fixed: Added missing 's'
+    contactSessionId: v.id("contactSessions"),
   },
   handler: async (ctx, args) => {
     const contactSession = await ctx.db.get(args.contactSessionId);
 
-    // Added: Validation for contactSession
     if (!contactSession || contactSession.expiresAt < Date.now()) {
       throw new ConvexError({
         code: "Unauthenticated",
@@ -94,6 +91,6 @@ export const getMany = query({
       threadId: args.threadId,
       paginationOpts: args.paginationOpts,
     });
-    return paginated
+    return paginated;
   },
 });

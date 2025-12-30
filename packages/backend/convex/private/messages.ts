@@ -30,19 +30,22 @@ export const enhanceResponse = action({
       });
     }
 
+    // ✅ FIXED: Added tool configuration to prevent tool call errors
     const response = await generateText({
       model: groq("llama-3.3-70b-versatile"),
       messages: [
         {
           role: "system",
-          content:
-            OPERATOR_MESSAGE_ENHANCEMENT_PROMPT,
+          content: OPERATOR_MESSAGE_ENHANCEMENT_PROMPT,
         },
         {
           role: "user",
           content: args.prompt,
         },
       ],
+      // ✅ Provide an empty ToolSet typed value to satisfy the expected type
+      tools: {} as any, // No tools available for enhancement
+      toolChoice: "none", // Don't try to use any tools
     });
     return response.text;
   },
@@ -87,7 +90,6 @@ export const create = mutation({
       });
     }
 
-    // Fixed: Changed = to === for comparison
     if (conversation.status === "resolved") {
       throw new ConvexError({
         code: "BAD_REQUEST",
@@ -96,9 +98,9 @@ export const create = mutation({
     }
 
     if (conversation.status === "unresolved") {
-        await ctx.db.patch(args.conversationId,{
-          status:"escalated"
-        })
+      await ctx.db.patch(args.conversationId, {
+        status: "escalated",
+      });
     }
 
     await saveMessage(ctx, components.agent, {

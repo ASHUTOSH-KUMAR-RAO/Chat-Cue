@@ -1,59 +1,21 @@
 "use client";
 
 import { useAtomValue, useSetAtom } from "jotai";
-import { Loader } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   contactSessionIdAtomFamily,
   errorMessageAtom,
   loadingMessageAtom,
   organizationIdAtom,
   screenAtom,
+  widgetSettingsAtom,
 } from "@/modules/widget/atoms/widget-atoms";
-import { WidgetHeader } from "@/modules/widget/ui/components/widget-header";
 import { useEffect, useState } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@workspace/backend/_generated/api";
 import { Id } from "@workspace/backend/_generated/dataModel";
 
-type InitStep = "org" | "session" | "settings" | "vapi" | "done";
-
-// Black & White Particle Component
-const Particle = ({ delay }: { delay: number }) => {
-  const [position, setPosition] = useState({
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-  });
-  const isWhite = Math.random() > 0.5;
-  const size = Math.random() * 4 + 2;
-
-  useEffect(() => {
-    const interval = setInterval(
-      () => {
-        setPosition({
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-        });
-      },
-      8000 + Math.random() * 4000
-    );
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div
-      className={`absolute rounded-full ${isWhite ? "bg-white" : "bg-black"} opacity-20 blur-[1px]`}
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        transition: `all ${8 + Math.random() * 4}s ease-in-out`,
-        animationDelay: `${delay}ms`,
-      }}
-    />
-  );
-};
+type InitStep = "org" | "session" | "settings" | "done";
 
 export const WidgetLoadingScreen = ({
   organizationId,
@@ -68,8 +30,9 @@ export const WidgetLoadingScreen = ({
 
   const setOrganizationId = useSetAtom(organizationIdAtom);
 
-  const [step, setstep] = useState<InitStep>("org");
-  const [sessionValid, setsessionValid] = useState(false);
+  const setWidgetSettings = useSetAtom(widgetSettingsAtom);
+  const [step, setStep] = useState<InitStep>("org");
+  const [sessionValid, setSessionValid] = useState(false);
 
   const contactSessionId = useAtomValue(
     contactSessionIdAtomFamily(organizationId || " ")
@@ -81,25 +44,25 @@ export const WidgetLoadingScreen = ({
     if (step !== "org") {
       return;
     }
-    setLoadingMessage("Finding the organization Id...");
+    setLoadingMessage("Finding the organization ID...");
     if (!organizationId) {
-      setErrorMessage("organization Id is required");
+      setErrorMessage("Organization ID is required");
       setScreen("error");
       return;
     }
-    setLoadingMessage("Verifying Organization...");
+    setLoadingMessage("Verifying organization...");
     validateOrganization({ organizationId })
       .then((result) => {
         if (result.valid) {
           setOrganizationId(organizationId);
-          setstep("session");
+          setStep("session");
         } else {
-          setErrorMessage(result.reason || "Invalid Configuration");
+          setErrorMessage(result.reason || "Invalid configuration");
           setScreen("error");
         }
       })
       .catch(() => {
-        setErrorMessage("Unable to Verifying Organization");
+        setErrorMessage("Unable to verify organization");
         setScreen("error");
       });
   }, [
@@ -108,7 +71,7 @@ export const WidgetLoadingScreen = ({
     setErrorMessage,
     setScreen,
     setOrganizationId,
-    setstep,
+    setStep,
     validateOrganization,
     setLoadingMessage,
   ]);
@@ -125,8 +88,8 @@ export const WidgetLoadingScreen = ({
     setLoadingMessage("Finding contact session ID...");
 
     if (!contactSessionId) {
-      setsessionValid(false);
-      setstep("done");
+      setSessionValid(false);
+      setStep("settings");
       return;
     }
 
@@ -136,14 +99,32 @@ export const WidgetLoadingScreen = ({
       contactSessionId: contactSessionId as Id<"contactSessions">,
     })
       .then((result) => {
-        setsessionValid(result.valid);
-        setstep("done");
+        setSessionValid(result.valid);
+        setStep("settings");
       })
       .catch(() => {
-        setsessionValid(false);
-        setstep("done");
+        setSessionValid(false);
+        setStep("settings");
       });
   }, [step, contactSessionId, validateContactSession, setLoadingMessage]);
+
+  // Step 3: Load Widget Settings
+  const widgetSettings = useQuery(
+    api.public.widgetSettings.getByConversationId,
+    organizationId ? { organizationId } : "skip"
+  );
+
+  useEffect(() => {
+    if (step !== "settings") {
+      return;
+    }
+    setLoadingMessage("Loading widget settings...");
+
+    if (widgetSettings !== undefined) {
+      setWidgetSettings(widgetSettings);
+      setStep("done");
+    }
+  }, [step, widgetSettings, setLoadingMessage, setWidgetSettings, setStep]);
 
   useEffect(() => {
     if (step !== "done") {
@@ -155,80 +136,62 @@ export const WidgetLoadingScreen = ({
   }, [step, contactSessionId, sessionValid, setScreen]);
 
   return (
-    <div className="flex h-full flex-col relative overflow-hidden">
-      {/* Black & White Animated Particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <Particle key={i} delay={i * 150} />
-        ))}
-      </div>
-
-      {/* Header with Glass Effect */}
-      <div className="relative backdrop-blur-xl bg-black/60 border-b border-white/10 shadow-2xl z-10">
-        <div className="flex flex-col justify-between gap-y-2.5 px-4 py-6">
-          <h1 className="text-xl font-semibold tracking-tight text-white animate-in fade-in slide-in-from-top-4 duration-700">
-            Hi there! 👋
-          </h1>
-          <p
-            className="text-base font-medium text-white/60 animate-in fade-in slide-in-from-top-4 duration-700"
-            style={{ animationDelay: "100ms" }}
-          >
+    <div className="flex h-full flex-col bg-background">
+      {/* Header */}
+      <div className="border-b bg-card shadow-sm">
+        <div className="flex flex-col gap-2 px-4 py-6">
+          <h1 className="text-xl font-semibold">Hi there! 👋</h1>
+          <p className="text-sm text-muted-foreground">
             Let&apos;s get you started
           </p>
         </div>
       </div>
 
       {/* Loading Content */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-y-6 p-8 relative z-10">
-        {/* Glass Loading Card */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-700">
-          <div className="flex flex-col items-center gap-y-6">
-            {/* Animated Loader */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-white/10 blur-xl animate-pulse"></div>
-              <Loader
-                className="h-12 w-12 text-white animate-spin relative z-10"
-                strokeWidth={2.5}
-              />
-            </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+        {/* Loading Card */}
+        <div className="flex flex-col items-center gap-6 rounded-2xl border bg-card p-8 shadow-lg">
+          {/* Loader */}
+          <div className="relative">
+            <Loader2 className="size-12 animate-spin text-primary" />
+          </div>
 
-            {/* Loading Message */}
-            <div className="text-center space-y-2">
-              <p className="text-white/90 font-medium text-base animate-pulse">
-                {loadingMessage || "Loading..."}
-              </p>
-              <div className="flex justify-center gap-1.5">
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                ></div>
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                ></div>
-                <div
-                  className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                ></div>
-              </div>
+          {/* Loading Message */}
+          <div className="text-center space-y-2">
+            <p className="font-medium text-foreground">
+              {loadingMessage || "Loading..."}
+            </p>
+            <div className="flex justify-center gap-1.5">
+              <div className="size-1.5 rounded-full bg-primary animate-bounce" />
+              <div
+                className="size-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <div
+                className="size-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
             </div>
           </div>
         </div>
 
         {/* Progress Steps Indicator */}
-        <div
-          className="flex gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700"
-          style={{ animationDelay: "200ms" }}
-        >
+        <div className="flex gap-2">
           <div
-            className={`h-1.5 w-8 rounded-full transition-all duration-500 ${step === "org" ? "bg-white" : "bg-white/20"}`}
-          ></div>
+            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+              step === "org" ? "bg-primary" : "bg-muted"
+            }`}
+          />
           <div
-            className={`h-1.5 w-8 rounded-full transition-all duration-500 ${step === "session" ? "bg-white" : "bg-white/20"}`}
-          ></div>
+            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+              step === "session" ? "bg-primary" : "bg-muted"
+            }`}
+          />
           <div
-            className={`h-1.5 w-8 rounded-full transition-all duration-500 ${step === "done" ? "bg-white" : "bg-white/20"}`}
-          ></div>
+            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
+              step === "settings" || step === "done" ? "bg-primary" : "bg-muted"
+            }`}
+          />
         </div>
       </div>
     </div>
