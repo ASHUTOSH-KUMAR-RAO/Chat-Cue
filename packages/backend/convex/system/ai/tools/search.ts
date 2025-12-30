@@ -1,7 +1,6 @@
 import { groq } from "@ai-sdk/groq";
 import { createTool } from "@convex-dev/agent";
 import z from "zod";
-import { query } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import rag from "../rag";
 import { generateText } from "ai";
@@ -10,14 +9,15 @@ import { SEARCH_INTERPRETER_PROMPT } from "../constants";
 
 export const search = createTool({
   description:
-    "Search the knowledge base for relevant information to help the answer user questions",
+    "Search the knowledge base for relevant information to help answer user questions",
   args: z.object({
-    query: z.string().describe("The Search query to find relevant information"),
+    query: z.string().describe("The search query to find relevant information"),
   }),
   handler: async (ctx, args) => {
     if (!ctx.threadId) {
-      return "Missing Thread Id";
+      return "Missing Thread ID";
     }
+
     const conversation = await ctx.runQuery(
       internal.system.conversations.getByThreadId,
       { threadId: ctx.threadId }
@@ -34,24 +34,29 @@ export const search = createTool({
       query: args.query,
       limit: 5,
     });
+
     const contextText = `Found results in ${searchResult.entries
       .map((e) => e.title || null)
       .filter((t) => t !== null)
-      .join(",")} Here is the context:\n\n${searchResult.text}`;
+      .join(", ")}. Here is the context:\n\n${searchResult.text}`;
+
+    // ✅ FIXED: Added tools configuration
     const response = await generateText({
       messages: [
         {
           role: "system",
-          content:
-            SEARCH_INTERPRETER_PROMPT,
+          content: SEARCH_INTERPRETER_PROMPT,
         },
         {
           role: "user",
-          content: `User asked : "${args.query}"\n\nSearch result: ${contextText}`,
+          content: `User asked: "${args.query}"\n\nSearch result: ${contextText}`,
         },
       ],
       model: groq("llama-3.3-70b-versatile") as any,
+      // ✅ Prevent tool calling in search interpreter
+      toolChoice: "none",
     });
+
     await supportAgent.saveMessage(ctx, {
       threadId: ctx.threadId,
       message: {
@@ -59,6 +64,7 @@ export const search = createTool({
         content: response.text,
       },
     });
+
     return response.text;
   },
 });
