@@ -9,13 +9,16 @@ import {
   organizationIdAtom,
   screenAtom,
   widgetSettingsAtom,
+  vapiSecretsAtom,
 } from "@/modules/widget/atoms/widget-atoms";
 import { useEffect, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@workspace/backend/_generated/api";
 import { Id } from "@workspace/backend/_generated/dataModel";
 
-type InitStep = "org" | "session" | "settings" | "done";
+type InitStep = "org" | "session" | "settings" | "vapi" | "done";
+
+const STEPS: InitStep[] = ["org", "session", "settings", "vapi"];
 
 export const WidgetLoadingScreen = ({
   organizationId,
@@ -31,6 +34,7 @@ export const WidgetLoadingScreen = ({
   const setOrganizationId = useSetAtom(organizationIdAtom);
 
   const setWidgetSettings = useSetAtom(widgetSettingsAtom);
+  const setVapiSecrets = useSetAtom(vapiSecretsAtom);
   const [step, setStep] = useState<InitStep>("org");
   const [sessionValid, setSessionValid] = useState(false);
 
@@ -122,10 +126,44 @@ export const WidgetLoadingScreen = ({
 
     if (widgetSettings !== undefined) {
       setWidgetSettings(widgetSettings);
-      setStep("done");
+      setStep("vapi");
     }
   }, [step, widgetSettings, setLoadingMessage, setWidgetSettings, setStep]);
 
+  // Step 4: Load Vapi Secrets
+  const getVapiSecrets = useAction(api.public.secrets.getVapiSecrets);
+
+  useEffect(() => {
+    if (step !== "vapi") {
+      return;
+    }
+
+    if (!organizationId) {
+      setStep("done");
+      return;
+    }
+
+    setLoadingMessage("Loading voice features...");
+
+    getVapiSecrets({ organizationId })
+      .then((secrets) => {
+        setVapiSecrets(secrets);
+        setStep("done");
+      })
+      .catch(() => {
+        setVapiSecrets(null);
+        setStep("done");
+      });
+  }, [
+    step,
+    organizationId,
+    getVapiSecrets,
+    setVapiSecrets,
+    setLoadingMessage,
+    setStep,
+  ]);
+
+  // Step 5: Navigate to appropriate screen
   useEffect(() => {
     if (step !== "done") {
       return;
@@ -135,11 +173,13 @@ export const WidgetLoadingScreen = ({
     setScreen(hasValidSession ? "selection" : "auth");
   }, [step, contactSessionId, sessionValid, setScreen]);
 
+  const currentStepIndex = STEPS.indexOf(step);
+
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <div className="border-b bg-card shadow-sm">
-        <div className="flex flex-col gap-2 px-4 py-6">
+      <div className="border-b bg-card">
+        <div className="flex flex-col gap-1.5 px-4 py-5">
           <h1 className="text-xl font-semibold">Hi there! 👋</h1>
           <p className="text-sm text-muted-foreground">
             Let&apos;s get you started
@@ -148,50 +188,28 @@ export const WidgetLoadingScreen = ({
       </div>
 
       {/* Loading Content */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+      <div className="flex flex-1 flex-col items-center justify-center gap-8 p-6">
         {/* Loading Card */}
-        <div className="flex flex-col items-center gap-6 rounded-2xl border bg-card p-8 shadow-lg">
+        <div className="flex flex-col items-center gap-5 rounded-lg border bg-card p-8">
           {/* Loader */}
-          <div className="relative">
-            <Loader2 className="size-12 animate-spin text-primary" />
-          </div>
+          <Loader2 className="size-10 animate-spin text-primary" />
 
           {/* Loading Message */}
-          <div className="text-center space-y-2">
-            <p className="font-medium text-foreground">
-              {loadingMessage || "Loading..."}
-            </p>
-            <div className="flex justify-center gap-1.5">
-              <div className="size-1.5 rounded-full bg-primary animate-bounce" />
-              <div
-                className="size-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <div
-                className="size-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
-            </div>
-          </div>
+          <p className="font-medium text-center">
+            {loadingMessage || "Loading..."}
+          </p>
         </div>
 
         {/* Progress Steps Indicator */}
         <div className="flex gap-2">
-          <div
-            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
-              step === "org" ? "bg-primary" : "bg-muted"
-            }`}
-          />
-          <div
-            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
-              step === "session" ? "bg-primary" : "bg-muted"
-            }`}
-          />
-          <div
-            className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${
-              step === "settings" || step === "done" ? "bg-primary" : "bg-muted"
-            }`}
-          />
+          {STEPS.map((s, index) => (
+            <div
+              key={s}
+              className={`h-1 w-8 rounded-full transition-colors ${
+                index <= currentStepIndex ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
         </div>
       </div>
     </div>
