@@ -4,7 +4,7 @@ import {
   AISuggestions,
 } from "@workspace/ui/components/ai/suggestion";
 import { useThreadMessages, toUIMessages } from "@convex-dev/agent/react";
-import { ArrowLeft, Menu, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, AlertCircle } from "lucide-react";
 import { useInfinitScroll } from "@workspace/ui/hooks/use-infinite.scroll";
 import { InfiniteScrollTrigger } from "@workspace/ui/components/infinite-scroll-trigger";
 import { DicebearAvatar } from "@workspace/ui/components/dicebear-avatar";
@@ -39,7 +39,7 @@ import { AIResponse } from "@workspace/ui/components/ai/response";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 const formSchema = z.object({
   message: z.string().min(1, "Message is Required"),
@@ -56,6 +56,9 @@ export const WidgetChatScreen = () => {
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previousMessagesLength = useRef(0);
 
   const onBack = () => {
     setConversationId(null);
@@ -110,12 +113,22 @@ export const WidgetChatScreen = () => {
 
   const createMessage = useAction(api.public.messages.create);
 
+  // Auto scroll to bottom on new messages
+  useEffect(() => {
+    const currentLength = messages.results?.length || 0;
+    if (currentLength > previousMessagesLength.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    previousMessagesLength.current = currentLength;
+  }, [messages.results?.length]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!conversation || !contactSessionId || isSubmitting) {
       return;
     }
 
     setIsSubmitting(true);
+    setError(null);
     form.reset();
 
     try {
@@ -126,15 +139,28 @@ export const WidgetChatScreen = () => {
       });
     } catch (error) {
       console.error("Failed to send message:", error);
+      setError("Failed to send message. Please try again.");
+      form.setValue("message", values.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    form.setValue("message", suggestion, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+  };
+
+  const isConversationResolved = conversation?.status === "resolved";
+  const canSubmit =
+    !isConversationResolved && !isSubmitting && form.formState.isValid;
+
   if (conversation === undefined) {
     return (
       <div className="flex h-full flex-col bg-background">
-        {/* Header */}
         <div className="border-b bg-card">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
@@ -143,6 +169,7 @@ export const WidgetChatScreen = () => {
                 size="icon"
                 variant="ghost"
                 className="size-9"
+                disabled
               >
                 <ArrowLeft className="size-4" />
               </Button>
@@ -159,7 +186,6 @@ export const WidgetChatScreen = () => {
           </div>
         </div>
 
-        {/* Loading State */}
         <div className="flex flex-1 items-center justify-center p-8">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
@@ -175,28 +201,31 @@ export const WidgetChatScreen = () => {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <div className="border-b bg-card shadow-sm">
+      <div className="border-b bg-card">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Button
               onClick={onBack}
               size="icon"
               variant="ghost"
-              className="size-9"
+              className="size-9 hover:bg-accent transition-colors"
             >
               <ArrowLeft className="size-4" />
             </Button>
             <div>
               <p className="font-semibold">Chat</p>
               <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-green-500" />
-                <span className="text-xs text-muted-foreground">Active</span>
+                <div
+                  className={`size-2 rounded-full ${
+                    isConversationResolved ? "bg-gray-400" : "bg-green-500"
+                  }`}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {isConversationResolved ? "Resolved" : "Active"}
+                </span>
               </div>
             </div>
           </div>
-          <Button size="icon" variant="ghost" className="size-9">
-            <Menu className="size-4" />
-          </Button>
         </div>
       </div>
 
@@ -212,6 +241,11 @@ export const WidgetChatScreen = () => {
             />
             {toUIMessages(messages.results || []).map((message) => {
               const isUser = message.role === "user";
+              const content =
+                typeof (message as any).content === "string"
+                  ? (message as any).content
+                  : "";
+
               return (
                 <AIMessage
                   key={message.id}
@@ -221,12 +255,12 @@ export const WidgetChatScreen = () => {
                   }
                 >
                   <AIMessageContent
-                    className={`rounded-2xl px-4 py-3 shadow-sm ${
+                    className={`rounded-2xl px-4 py-3 ${
                       isUser ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}
                   >
                     <AIResponse className="text-sm leading-relaxed">
-                      {(message as any).content}
+                      {content}
                     </AIResponse>
                   </AIMessageContent>
                   {!isUser && (
@@ -243,7 +277,7 @@ export const WidgetChatScreen = () => {
             {/* Typing Indicator */}
             {isSubmitting && (
               <div className="mr-auto max-w-[85%]">
-                <div className="bg-muted rounded-2xl px-4 py-3 shadow-sm">
+                <div className="bg-muted rounded-2xl px-4 py-3">
                   <div className="flex gap-1.5">
                     <div className="size-2 rounded-full bg-foreground/40 animate-bounce" />
                     <div
@@ -258,35 +292,42 @@ export const WidgetChatScreen = () => {
                 </div>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
           </AIConversationContent>
         </AIConversation>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
+
       {/* Suggestions */}
-      <AISuggestions className="flex w-full items-end p-2">
-        {suggestions.map((suggestion) => {
-          if (!suggestion) return null;
-          return (
-            <AISuggestion
-              key={suggestion}
-              onClick={() => {
-                form.setValue("message", suggestion, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                  shouldTouch: true,
-                });
-                form.handleSubmit(onSubmit)();
-              }}
-              suggestion={suggestion}
-            />
-          );
-        })}
-      </AISuggestions>
+      {suggestions.length > 0 && !isConversationResolved && (
+        <AISuggestions className="flex w-full items-end p-2 gap-2 overflow-x-auto">
+          {suggestions.map((suggestion) => {
+            if (!suggestion) return null;
+            return (
+              <AISuggestion
+                key={suggestion}
+                onClick={() => handleSuggestionClick(suggestion)}
+                suggestion={suggestion}
+              />
+            );
+          })}
+        </AISuggestions>
+      )}
 
       {/* Input Area */}
-      <div className="border-t bg-card shadow-sm">
+      <div className="border-t bg-card">
         <Form {...(form as any)}>
-          <div
+          <form
             className="p-4"
             onSubmit={(e) => {
               e.preventDefault();
@@ -297,21 +338,21 @@ export const WidgetChatScreen = () => {
               <FormField
                 control={form.control as any}
                 name="message"
-                disabled={conversation.status === "resolved" || isSubmitting}
+                disabled={isConversationResolved || isSubmitting}
                 render={({ field }) => (
                   <AIInputTextarea
-                    disabled={
-                      conversation.status === "resolved" || isSubmitting
-                    }
+                    disabled={isConversationResolved || isSubmitting}
                     onChange={field.onChange}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        form.handleSubmit(onSubmit)();
+                        if (canSubmit) {
+                          form.handleSubmit(onSubmit)();
+                        }
                       }
                     }}
                     placeholder={
-                      conversation?.status === "resolved"
+                      isConversationResolved
                         ? "This conversation has been resolved"
                         : "Type your message..."
                     }
@@ -322,15 +363,10 @@ export const WidgetChatScreen = () => {
               />
               <div className="px-3 pb-3 flex items-center justify-end">
                 <Button
-                  disabled={
-                    conversation?.status === "resolved" ||
-                    !form.formState.isValid ||
-                    isSubmitting
-                  }
-                  onClick={form.handleSubmit(onSubmit)}
-                  type="button"
+                  disabled={!canSubmit}
+                  type="submit"
                   size="icon"
-                  className="size-10 rounded-lg shadow-sm"
+                  className="size-10 rounded-lg"
                 >
                   {isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -340,7 +376,7 @@ export const WidgetChatScreen = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </form>
         </Form>
       </div>
     </div>

@@ -5,9 +5,10 @@ import { WidgetAuthScreen } from "@/modules/widget/ui/screens/widget-auth-screen
 import { screenAtom } from "@/modules/widget/atoms/widget-atoms";
 import { WidgetErrorScreen } from "@/modules/widget/ui/screens/widget-screen-error";
 import { WidgetLoadingScreen } from "../screens/widget-loading-screen";
-import { WidgetSellectionScreen } from "../screens/widget-selection-screen";
+import { WidgetSelectionScreen } from "../screens/widget-selection-screen";
 import { WidgetChatScreen } from "../screens/widget-chat-screen";
 import { WidgetInboxScreen } from "../screens/widget-inbox-screen";
+import { WidgetVoiceScreen } from "../screens/widget-voice-screen ";
 
 interface Props {
   organizationId: string | null;
@@ -20,9 +21,9 @@ const WidgetView = ({ organizationId }: Props) => {
     error: <WidgetErrorScreen />,
     loading: <WidgetLoadingScreen organizationId={organizationId} />,
     auth: <WidgetAuthScreen />,
-    voice: <p>Todo voice</p>,
+    voice: <WidgetVoiceScreen />,
     inbox: <WidgetInboxScreen />,
-    selection: <WidgetSellectionScreen />,
+    selection: <WidgetSelectionScreen />,
     chat: <WidgetChatScreen />,
     contact: <p>Todo: Contact</p>,
   };
