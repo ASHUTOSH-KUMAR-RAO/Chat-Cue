@@ -2,7 +2,6 @@
 
 import { getCountryFlagUrl, getCountryFromTimezone } from "@/lib/country-utils";
 import { api } from "@workspace/backend/_generated/api";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import {
   Select,
   SelectContent,
@@ -79,7 +78,7 @@ export const ConversationsPanel = () => {
           onValueChange={handleFilterChange}
           value={statusFilter}
         >
-          <SelectTrigger className="h-10 border-none bg-background shadow-sm transition-colors hover:bg-accent">
+          <SelectTrigger className="h-10 border-none bg-background shadow-sm transition-colors hover:bg-muted">
             <SelectValue placeholder="Filter conversations" />
           </SelectTrigger>
           <SelectContent>
@@ -111,8 +110,8 @@ export const ConversationsPanel = () => {
         </Select>
       </div>
 
-      {/* Conversations List */}
-      <ScrollArea className="flex-1">
+      {/* Conversations List - FIXED: overflow-y-auto added with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="flex w-full flex-col">
           {/* Loading State */}
           {isLoading && (
@@ -261,7 +260,7 @@ export const ConversationsPanel = () => {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

@@ -109,6 +109,7 @@ export const WidgetChatScreen = () => {
     defaultValues: {
       message: "",
     },
+    mode: "onChange",
   });
 
   const createMessage = useAction(api.public.messages.create);
@@ -127,6 +128,12 @@ export const WidgetChatScreen = () => {
       return;
     }
 
+    const trimmedMessage = values.message.trim();
+    if (!trimmedMessage) {
+      setError("Please enter a message");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     form.reset();
@@ -134,12 +141,16 @@ export const WidgetChatScreen = () => {
     try {
       await createMessage({
         threadId: conversation.threadId,
-        prompt: values.message,
+        prompt: trimmedMessage,
         contactSessionId,
       });
     } catch (error) {
       console.error("Failed to send message:", error);
-      setError("Failed to send message. Please try again.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send message. Please try again."
+      );
       form.setValue("message", values.message);
     } finally {
       setIsSubmitting(false);
@@ -147,6 +158,8 @@ export const WidgetChatScreen = () => {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (isConversationResolved || isSubmitting) return;
+
     form.setValue("message", suggestion, {
       shouldValidate: true,
       shouldDirty: true,
@@ -155,13 +168,14 @@ export const WidgetChatScreen = () => {
   };
 
   const isConversationResolved = conversation?.status === "resolved";
+  const messageValue = form.watch("message");
   const canSubmit =
-    !isConversationResolved && !isSubmitting && form.formState.isValid;
+    !isConversationResolved && !isSubmitting && messageValue?.trim().length > 0;
 
   if (conversation === undefined) {
     return (
       <div className="flex h-full flex-col bg-background">
-        <div className="border-b bg-card">
+        <div className="shrink-0 border-b bg-card">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <Button
@@ -200,15 +214,15 @@ export const WidgetChatScreen = () => {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Header */}
-      <div className="border-b bg-card">
+      {/* Header - FIXED: Added shrink-0 */}
+      <div className="shrink-0 border-b bg-card">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Button
               onClick={onBack}
               size="icon"
               variant="ghost"
-              className="size-9 hover:bg-accent transition-colors"
+              className="size-9 hover:bg-muted transition-colors"
             >
               <ArrowLeft className="size-4" />
             </Button>
@@ -229,8 +243,8 @@ export const WidgetChatScreen = () => {
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-hidden">
+      {/* Messages Area - FIXED: Added proper overflow wrapper with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         <AIConversation className="h-full">
           <AIConversationContent className="p-4 space-y-3">
             <InfiniteScrollTrigger
@@ -245,6 +259,11 @@ export const WidgetChatScreen = () => {
                 typeof (message as any).content === "string"
                   ? (message as any).content
                   : "";
+
+              // Skip empty messages
+              if (!content || content.trim().length === 0) {
+                return null;
+              }
 
               return (
                 <AIMessage
@@ -298,9 +317,9 @@ export const WidgetChatScreen = () => {
         </AIConversation>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message - FIXED: Added shrink-0 */}
       {error && (
-        <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
+        <div className="shrink-0 px-4 py-2 bg-destructive/10 border-t border-destructive/20">
           <div className="flex items-center gap-2 text-sm text-destructive">
             <AlertCircle className="size-4" />
             <span>{error}</span>
@@ -308,24 +327,26 @@ export const WidgetChatScreen = () => {
         </div>
       )}
 
-      {/* Suggestions */}
+      {/* Suggestions - FIXED: Added shrink-0 and custom scrollbar */}
       {suggestions.length > 0 && !isConversationResolved && (
-        <AISuggestions className="flex w-full items-end p-2 gap-2 overflow-x-auto">
-          {suggestions.map((suggestion) => {
-            if (!suggestion) return null;
-            return (
-              <AISuggestion
-                key={suggestion}
-                onClick={() => handleSuggestionClick(suggestion)}
-                suggestion={suggestion}
-              />
-            );
-          })}
-        </AISuggestions>
+        <div className="shrink-0">
+          <AISuggestions className="flex w-full items-end p-2 gap-2 overflow-x-auto custom-scrollbar">
+            {suggestions.map((suggestion) => {
+              if (!suggestion) return null;
+              return (
+                <AISuggestion
+                  key={suggestion}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  suggestion={suggestion}
+                />
+              );
+            })}
+          </AISuggestions>
+        </div>
       )}
 
-      {/* Input Area */}
-      <div className="border-t bg-card">
+      {/* Input Area - FIXED: Added shrink-0 */}
+      <div className="shrink-0 border-t bg-card">
         <Form {...(form as any)}>
           <form
             className="p-4"
@@ -346,7 +367,12 @@ export const WidgetChatScreen = () => {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        if (canSubmit) {
+                        const currentValue = form.getValues("message");
+                        if (
+                          currentValue?.trim().length > 0 &&
+                          !isSubmitting &&
+                          !isConversationResolved
+                        ) {
                           form.handleSubmit(onSubmit)();
                         }
                       }
