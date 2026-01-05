@@ -50,19 +50,23 @@ export const create = action({
       });
     }
 
-    const shouldTriggerAgent = conversation.status === "unresolved";
+    // FIXED: Agent should respond for both "unresolved" and "escalated"
+    const shouldTriggerAgent =
+      conversation.status === "unresolved" ||
+      conversation.status === "escalated";
 
     if (shouldTriggerAgent) {
-      // ✅✅✅ ARRAY FORMAT - COPY THIS EXACTLY! ✅✅✅
+      // Agent with tools for unresolved/escalated conversations
       await supportAgent.generateText(
         ctx,
         { threadId: args.threadId },
         {
           prompt: args.prompt,
-          tools: [resolveConversation, escalateConversation, search] as any, // SQUARE BRACKETS!
+          tools: [resolveConversation, escalateConversation, search] as any,
         }
       );
     } else {
+      // Just save message without agent response (for other statuses)
       await saveMessage(ctx, components.agent, {
         threadId: args.threadId,
         prompt: args.prompt,

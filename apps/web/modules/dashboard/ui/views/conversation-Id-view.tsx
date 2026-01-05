@@ -177,7 +177,7 @@ export const ConversationIdView = ({
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
-      <header className="flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3 shadow-sm">
+      <header className="flex shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3 shadow-sm">
         <Button size="sm" variant="ghost" className="size-9 p-0">
           <MoreHorizontalIcon className="size-4" />
         </Button>
@@ -189,77 +189,79 @@ export const ConversationIdView = ({
         )}
       </header>
 
-      {/* Messages Area */}
-      <AIConversation className="flex-1 overflow-hidden">
-        <AIConversationContent className="px-2">
-          <InfiniteScrollTrigger
-            ref={topElementRef}
-            canLoadMore={canLoadMore}
-            isLoadingMore={isLoadingMore}
-            onLoadMore={handleLoadMore}
-          />
-          {isLoading ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2Icon className="size-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">
-                  Loading messages...
+      {/* Messages Area - FIXED: overflow-y-auto wrapper added with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <AIConversation className="h-full">
+          <AIConversationContent className="px-2">
+            <InfiniteScrollTrigger
+              ref={topElementRef}
+              canLoadMore={canLoadMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={handleLoadMore}
+            />
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2Icon className="size-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading messages...
+                  </p>
+                </div>
+              </div>
+            ) : messages.results && messages.results.length > 0 ? (
+              toUIMessages(messages.results)?.map((message) => {
+                const isUser = message.role === "user";
+                return (
+                  <AIMessage
+                    from={message.role === "user" ? "assistant" : "user"}
+                    key={message.id}
+                    className="py-3"
+                  >
+                    {!isUser && (
+                      <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
+                        <DicebearAvatar seed="assistant" size={24} />
+                      </div>
+                    )}
+                    <AIMessageContent className="rounded-2xl shadow-sm">
+                      <AIResponse>{(message as any).content}</AIResponse>
+                    </AIMessageContent>
+                    {isUser && (
+                      <div className="flex size-8 items-center justify-center rounded-full bg-muted ring-2 ring-border">
+                        <DicebearAvatar
+                          seed={conversation?.contactSessionId}
+                          size={24}
+                        />
+                      </div>
+                    )}
+                  </AIMessage>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 text-center">
+                <div className="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
+                  <MessageSquareIcon className="size-8 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-foreground">No messages yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Start the conversation below
                 </p>
               </div>
-            </div>
-          ) : messages.results && messages.results.length > 0 ? (
-            toUIMessages(messages.results)?.map((message) => {
-              const isUser = message.role === "user";
-              return (
-                <AIMessage
-                  from={message.role === "user" ? "assistant" : "user"}
-                  key={message.id}
-                  className="py-3"
-                >
-                  {!isUser && (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
-                      <DicebearAvatar seed="assistant" size={24} />
-                    </div>
-                  )}
-                  <AIMessageContent className="rounded-2xl shadow-sm">
-                    <AIResponse>{(message as any).content}</AIResponse>
-                  </AIMessageContent>
-                  {isUser && (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-muted ring-2 ring-border">
-                      <DicebearAvatar
-                        seed={conversation?.contactSessionId}
-                        size={24}
-                      />
-                    </div>
-                  )}
-                </AIMessage>
-              );
-            })
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="flex size-16 items-center justify-center rounded-full bg-muted mb-4">
-                <MessageSquareIcon className="size-8 text-muted-foreground" />
-              </div>
-              <p className="font-medium text-foreground">No messages yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Start the conversation below
-              </p>
-            </div>
-          )}
-        </AIConversationContent>
-        <AIConversationScrollButton />
-      </AIConversation>
+            )}
+          </AIConversationContent>
+          <AIConversationScrollButton />
+        </AIConversation>
+      </div>
 
       {/* Error Message */}
       {error && (
-        <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive shadow-sm">
+        <div className="shrink-0 mx-4 mb-3 flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive shadow-sm">
           <AlertCircleIcon className="size-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="px-3 pb-3">
+      {/* Input Area - FIXED: shrink-0 added */}
+      <div className="shrink-0 px-3 pb-3">
         <AIInput onSubmit={form.handleSubmit(onSubmit)} className="shadow-lg">
           <FormField
             control={form.control}
@@ -330,7 +332,7 @@ export const ConversationIdViewLoading = () => {
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
-      <header className="flex items-center justify-between border-b bg-background/95 backdrop-blur px-4 py-3 shadow-sm">
+      <header className="flex shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur px-4 py-3 shadow-sm">
         <Button disabled size="sm" variant="ghost" className="size-9 p-0">
           <MoreHorizontalIcon className="size-4" />
         </Button>
@@ -338,31 +340,33 @@ export const ConversationIdViewLoading = () => {
       </header>
 
       {/* Messages Skeleton */}
-      <AIConversation className="flex-1 overflow-hidden">
-        <AIConversationContent className="px-2">
-          {Array.from({ length: 6 }).map((_, index) => {
-            const isUser = index % 2 === 0;
-            const widths = ["w-56", "w-64", "w-52", "w-60"];
-            const width = widths[index % widths.length];
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <AIConversation className="h-full">
+          <AIConversationContent className="px-2">
+            {Array.from({ length: 6 }).map((_, index) => {
+              const isUser = index % 2 === 0;
+              const widths = ["w-56", "w-64", "w-52", "w-60"];
+              const width = widths[index % widths.length];
 
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "flex w-full items-end gap-3 py-3",
-                  isUser ? "flex-row-reverse" : ""
-                )}
-              >
-                <Skeleton className="size-8 flex-shrink-0 rounded-full" />
-                <Skeleton className={`h-16 ${width} rounded-2xl`} />
-              </div>
-            );
-          })}
-        </AIConversationContent>
-      </AIConversation>
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex w-full items-end gap-3 py-3",
+                    isUser ? "flex-row-reverse" : ""
+                  )}
+                >
+                  <Skeleton className="size-8 flex-shrink-0 rounded-full" />
+                  <Skeleton className={`h-16 ${width} rounded-2xl`} />
+                </div>
+              );
+            })}
+          </AIConversationContent>
+        </AIConversation>
+      </div>
 
       {/* Input Skeleton */}
-      <div className="px-3 pb-3">
+      <div className="shrink-0 px-3 pb-3">
         <div className="rounded-2xl border bg-background shadow-lg">
           <Skeleton className="h-20 w-full rounded-t-2xl" />
           <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-2">
