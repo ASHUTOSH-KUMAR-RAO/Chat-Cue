@@ -12,7 +12,7 @@ interface DicebearAvatarProps {
   className?: string;
   badgeClassName?: string;
   imageUrl?: string;
-  badgeImageUrl?: string;
+  badgeImageUrl?: string | null | undefined; // ✅ Explicit type
   showBorder?: boolean;
   borderColor?: string;
   badgePosition?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
@@ -57,6 +57,12 @@ export const DicebearAvatar = ({
     "bottom-left": "bottom-0 left-0 -translate-x-[20%] translate-y-[20%]",
   };
 
+  // ✅ Validate badge URL
+  const shouldShowBadge =
+    badgeImageUrl &&
+    typeof badgeImageUrl === "string" &&
+    badgeImageUrl.length > 0;
+
   return (
     <div
       className="relative inline-block"
@@ -80,7 +86,7 @@ export const DicebearAvatar = ({
         />
       </Avatar>
 
-      {badgeImageUrl && (
+      {shouldShowBadge && (
         <div
           className={cn(
             "absolute flex items-center justify-center overflow-hidden rounded-full border-2 border-background bg-background shadow-sm transition-transform hover:scale-110",
@@ -101,6 +107,11 @@ export const DicebearAvatar = ({
             width={calculatedBadgeSize}
             src={badgeImageUrl}
             loading={loading}
+            onError={(e) => {
+              // ✅ Handle image load errors
+              console.error("Badge image failed to load:", badgeImageUrl);
+              e.currentTarget.style.display = "none";
+            }}
           />
         </div>
       )}
