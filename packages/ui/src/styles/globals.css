@@ -222,3 +222,16 @@
     scrollbar-width: none;
   }
 }
+
+/* Add this to your global CSS file */
+[data-clerk-pricing-table] * {
+  color: white !important;
+}
+
+[data-clerk-pricing-table] .cl-price {
+  color: white !important;
+}
+
+[data-clerk-pricing-table] .cl-planName {
+  color: white !important;
+}
