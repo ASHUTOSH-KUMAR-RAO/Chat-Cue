@@ -48,6 +48,7 @@ import { useState } from "react";
 import { ConversationStatusButton } from "../components/conversation-status-button";
 import { cn } from "@workspace/ui/lib/utils";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   message: z.string().min(1, "Message is Required"),
@@ -95,7 +96,7 @@ export const ConversationIdView = ({
       const response = await enhanceResponse({ prompt: currentValue });
       form.setValue("message", response);
     } catch (error) {
-      console.error("Failed to enhance response:", error);
+      toast.error("Something Went Wrong")
     } finally {
       setIsEnhancing(false);
     }

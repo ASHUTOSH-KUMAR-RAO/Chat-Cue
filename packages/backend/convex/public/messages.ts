@@ -19,7 +19,7 @@ export const create = action({
       internal.system.contactSessions.getOne,
       {
         contactSessionId: args.contactSessionId,
-      }
+      },
     );
 
     if (!contactSession || contactSession.expiresAt < Date.now()) {
@@ -33,7 +33,7 @@ export const create = action({
       internal.system.conversations.getByThreadId,
       {
         threadId: args.threadId,
-      }
+      },
     );
 
     if (!conversation) {
@@ -50,10 +50,18 @@ export const create = action({
       });
     }
 
-    // FIXED: Agent should respond for both "unresolved" and "escalated"
+    await ctx.runMutation(internal.system.contactSessions.refresh, {
+      contactSessionId: args.contactSessionId,
+    });
+
+    const subscription = await ctx.runQuery(
+      internal.system.subscriptions.getByOrganizationId,
+      {
+        organizationId: conversation.organizationId,
+      },
+    );
     const shouldTriggerAgent =
-      conversation.status === "unresolved" ||
-      conversation.status === "escalated";
+      conversation.status === "unresolved" && subscription?.status === "active";
 
     if (shouldTriggerAgent) {
       // Agent with tools for unresolved/escalated conversations
@@ -63,7 +71,7 @@ export const create = action({
         {
           prompt: args.prompt,
           tools: [resolveConversation, escalateConversation, search] as any,
-        }
+        },
       );
     } else {
       // Just save message without agent response (for other statuses)

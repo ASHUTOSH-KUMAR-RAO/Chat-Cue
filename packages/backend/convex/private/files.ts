@@ -18,6 +18,7 @@ import { Id } from "../_generated/dataModel";
 import { action, mutation, query, QueryCtx } from "../_generated/server";
 import { extractTextContent } from "../lib/extractTextContent";
 import rag from "../system/ai/rag";
+import { internal } from "../_generated/api";
 
 // MIME type detection: extension → file contents → fallback
 function guessMimeType(filename: string, bytes: ArrayBuffer) {
@@ -111,7 +112,18 @@ export const addFile = action({
         message: "Organization not found",
       });
     }
-
+   const subscription = await ctx.runQuery(
+      internal.system.subscriptions.getByOrganizationId,
+      {
+        organizationId: orgId,
+      },
+    );
+    if (subscription?.status !== "active") {
+      throw new ConvexError({
+        code: "BAD_REQUEST",
+        message: "Missing Subscription",
+      });
+    }
     const { bytes, filename, category } = args;
 
     // Auto-detect MIME type if not provided
