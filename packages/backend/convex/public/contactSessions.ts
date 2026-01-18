@@ -1,8 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // Basically humne yeha per kiya hai mere auth ka session 24 hour mein delet ho jayega
-
+ const SESSION_DURATION = 24 * 60 * 60 * 1000; // Basically humne yeha per kiya hai mere auth ka session 24 hour mein delet ho jayega
 export const create = mutation({
   args: {
     name: v.string(),

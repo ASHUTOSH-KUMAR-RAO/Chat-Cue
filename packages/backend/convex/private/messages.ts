@@ -29,7 +29,18 @@ export const enhanceResponse = action({
         message: "Organization not found",
       });
     }
-
+    const subscription = await ctx.runQuery(
+      internal.system.subscriptions.getByOrganizationId,
+      {
+        organizationId: orgId,
+      },
+    );
+    if (subscription?.status !== "active") {
+      throw new ConvexError({
+        code: "BAD_REQUEST",
+        message: "Missing Subscription",
+      });
+    }
     // ✅ FIXED: Added tool configuration to prevent tool call errors
     const response = await generateText({
       model: groq("llama-3.3-70b-versatile"),
