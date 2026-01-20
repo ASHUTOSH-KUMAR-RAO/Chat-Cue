@@ -1,9 +1,11 @@
 import { PricingTable as ClerkPricingTable } from "@clerk/nextjs";
 
 export const PricingTable = () => {
+  const PricingTableAny = ClerkPricingTable as any;
+
   return (
     <div className="flex flex-col items-center justify-center gap-y-4 py-8 px-4">
-      <ClerkPricingTable
+      <PricingTableAny
         forOrganizations
         appearance={{
           elements: {
