@@ -2,41 +2,91 @@
 
 <div align="center">
 
-**A production-ready B2B SaaS platform for intelligent customer support**
+**A production-ready B2B SaaS platform for intelligent, omnichannel customer support**
 
-Built with Next.js 15, Convex, AI embeddings, and modern web technologies
+Built with Next.js 15, Convex, VAPI, RAG Pipeline, AWS Secrets Manager, and modern web technologies
+
 </div>
 
 ---
 
 ## 🎯 About Chat-Cue
 
-Chat-Cue is a complete AI-powered customer support platform built from scratch. It demonstrates how to build a real-world B2B SaaS product with:
+Chat-Cue is a complete AI-powered customer support platform built from scratch. It solves a real business problem — **companies spend too much on 24/7 human support agents** for repetitive, common queries. Chat-Cue replaces that with an intelligent AI layer that handles customer queries instantly via **chat, voice calls, and email** — all from one platform.
 
-- 🤖 **AI-Powered Responses** - Using document embeddings and intelligent context retrieval
-- 🔍 **Intelligent Search** - Semantic search across your knowledge base
-- 📄 **Document Processing** - Automatic embedding generation from your documentation
-- 💳 **Billing & Subscriptions** - Complete payment integration
-- 🔒 **Enterprise Security** - Secure AWS credential management and multi-tenancy
-- 📊 **Analytics Dashboard** - Track support metrics and AI performance
-- ⚡ **Turborepo Monorepo** - Fast, scalable development workflow
+Think of it as an affordable, AI-first alternative to tools like Intercom or Freshdesk — purpose-built for modern businesses.
+
+---
+
+## 🚀 How It Works
+
+```
+Business uploads documents (FAQs, manuals, policies)
+            ↓
+RAG Pipeline extracts & embeds the content
+            ↓
+Customer visits website → Chat widget loads via embed script
+            ↓
+Customer asks a question
+            ↓
+Vector Search finds relevant context from documents
+            ↓
+AI generates accurate, context-aware response
+            ↓
+Conversation tracked → Resolved / Unresolved / Escalated
+```
+
+---
 
 ## ✨ Key Features
 
-### Platform Features
-- **Multi-Tenant Architecture** - Support multiple organizations securely
-- **Real-time Chat Widget** - Embeddable customer support widget
-- **Knowledge Base Management** - Upload and manage support documentation
-- **Conversation History** - Track all customer interactions
-- **Admin Dashboard** - Manage customers, documents, and settings
+### 🤖 AI & Intelligence
+- **RAG System** — Retrieval Augmented Generation for context-aware AI responses
+- **Document Processing Pipeline** — Supports PDFs, Images (OCR), HTML, and plain text
+- **Vector Search** — Semantic search across your knowledge base using Convex Vector Search
+- **AI Embeddings** — Automatic embedding generation from uploaded documents
+- **OCR Support** — Extract text from images using AI Vision (JPEG, PNG, WebP, GIF)
+- **Intelligent Escalation** — AI detects when to escalate to a human agent
 
-### Business Features
-- **Subscription Management** - Flexible pricing tiers and plans
-- **Billing Integration** - Automated invoicing and payment processing
-- **Usage Analytics** - Monitor AI usage and costs
-- **Team Collaboration** - Multi-user support with role-based access
+### 📞 Omnichannel Support
+- **AI Chat Widget** — Real-time embeddable chat for any website
+- **Voice Agent** — AI-powered voice calls via VAPI integration
+- **Inbound Calls** — Customers can call your AI agent directly
+- **Outbound Calls** — AI proactively calls customers on your behalf
+- **Email Support** *(coming soon)* — Ticket-based email support
 
-## 🚀 Tech Stack
+### 🏢 Business & SaaS Features
+- **Multi-Tenant Architecture** — Securely support multiple organizations on one platform
+- **Knowledge Base Management** — Upload and manage support documentation
+- **Conversation Management** — Track all interactions with Resolved / Unresolved / Escalated states
+- **Widget Customization** — Customize the chat widget to match your brand
+- **Integrations Panel** — Connect external tools and services
+- **Admin Dashboard** — Manage customers, documents, settings, and analytics
+
+### 💳 Billing & Subscriptions
+- **Subscription Management** — Free, Pro, and Enterprise plans
+- **Usage-Based Billing** — Track AI API usage per organization
+- **Clerk Billing Integration** — Seamless payment and plan management
+- **Upgrade/Downgrade flows** — Flexible plan switching
+
+### 🔒 Security
+- **AWS Secrets Manager** — Secure, encrypted storage for API keys (VAPI, OpenAI, etc.)
+- **Multi-Tenant Data Isolation** — Strict separation of data per organization
+- **Clerk Authentication** — Secure user login and session management
+- **Role-Based Access Control** — Different permissions per user
+- **Input Validation** — Zod schema validation on all inputs
+- **Rate Limiting** — Prevent API abuse
+- **XSS Protection** — Built-in Next.js security features
+
+### 📊 Monitoring & Analytics
+- **Conversation Analytics** — Track resolved, unresolved, and escalated tickets
+- **AI Performance Metrics** — Monitor response quality and speed
+- **Usage Tracking** — AI API cost tracking per organization
+- **Error Tracking** — Sentry integration for production monitoring
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
 - **Framework:** Next.js 15 (App Router)
@@ -47,57 +97,112 @@ Chat-Cue is a complete AI-powered customer support platform built from scratch. 
 
 ### Backend
 - **Database:** Convex (Real-time, serverless)
-- **Authentication:** Clerk
-- **File Storage:** AWS S3 (planned)
+- **Authentication & Billing:** Clerk
+- **File Storage:** AWS S3
 - **Vector DB:** Convex Vector Search
+- **Secrets Management:** AWS Secrets Manager
 
-### AI 
-- **Embeddings:** OpenAI / Custom model (planned)
-- **LLM:** GPT-4 / Claude (planned)
-- **Vector Search:** Convex Vector Search
+### AI & Voice
+- **Embeddings & LLM:** OpenAI / Groq (Llama 3.3 70B)
+- **Voice Agent:** VAPI (Inbound + Outbound calls)
+- **RAG Pipeline:** Custom-built document processing + vector retrieval
+- **OCR:** AI Vision via Groq
 
 ### DevOps
 - **Monorepo:** Turborepo (Fast build system with caching)
-- **Package Manager:** pnpm (Fast, disk space efficient)
+- **Package Manager:** pnpm
 - **Error Tracking:** Sentry
 - **Deployment:** Vercel (frontend) + Convex (backend)
+
+---
+
+## 🗂️ Three Deployments
+
+Chat-Cue runs as **3 separate applications** in a Turborepo monorepo:
+
+| App | Description |
+|-----|-------------|
+| **Web** | Main dashboard for businesses — conversations, knowledge base, settings, billing |
+| **Widget** | Customer-facing chat UI — the interface customers interact with |
+| **Embed** | Lightweight embed script — businesses paste one line of code to load the widget |
+
+---
+
+## 🧠 RAG Pipeline — Document Processing
+
+Chat-Cue processes uploaded documents through an intelligent pipeline before storing them for AI retrieval:
+
+```
+File Upload
+    ↓
+MIME Type Detection
+    ↓
+┌─────────────────────────────────────┐
+│  Image → OCR via AI Vision          │
+│  PDF   → Text extraction via AI     │
+│  HTML  → Markdown conversion via AI │
+│  Text  → Direct processing          │
+└─────────────────────────────────────┘
+    ↓
+Text → Embeddings (OpenAI)
+    ↓
+Stored in Convex Vector DB
+    ↓
+Ready for semantic search
+```
+
+**AI Model Used:** Groq — Llama 3.3 70B Versatile (fast, high-quality extraction)
+
+---
+
+## 💬 Conversation States
+
+Every customer interaction is tracked with one of three states:
+
+| State | Meaning |
+|-------|---------|
+| ✅ **Resolved** | AI successfully answered the customer's query |
+| ❓ **Unresolved** | AI couldn't find relevant context — needs manual review |
+| 🚨 **Escalated** | Customer requested a human, or AI detected a complex issue |
+
+This helps businesses understand AI effectiveness and identify gaps in their knowledge base.
+
+---
 
 ## 📦 Project Structure
 
 ```
 chat-cue/
 ├── apps/
-│   └── web/                    # Main Next.js application
+│   └── web/                    # Main Next.js dashboard application
 │       ├── app/                # App router pages
-│       ├── components/         # React components
-│       │   ├── widget/         # Customer support widget
-│       │   └── dashboard/      # Admin dashboard
+│       ├── components/
+│       │   ├── widget/         # Customer support widget UI
+│       │   └── dashboard/      # Admin dashboard components
 │       └── lib/                # Utilities and helpers
 │
 ├── packages/
 │   ├── backend/                # Convex backend
-│   │   ├── convex/             # Database schema & functions
+│   │   ├── convex/
 │   │   │   ├── schema.ts       # Data models
 │   │   │   ├── queries.ts      # Database queries
 │   │   │   └── mutations.ts    # Database mutations
-│   │   └── embeddings/         # Vector search logic
+│   │   └── embeddings/         # RAG pipeline & vector search logic
 │   │
-│   ├── ui/                     # Shared UI components
-│   │   └── components/         # shadcn/ui components
-│   │
-│   ├── math/                   # Utility functions
-│   ├── typescript-config/      # Shared TS configs
+│   ├── ui/                     # Shared UI components (shadcn/ui)
+│   ├── typescript-config/      # Shared TypeScript configs
 │   └── eslint-config/          # Shared linting rules
 │
 ├── turbo.json                  # Turborepo configuration
 └── package.json                # Root dependencies
 ```
 
+---
+
 ## 🛠️ Getting Started
 
 ### Prerequisites
 
-Make sure you have these installed:
 - **Node.js** >= 20
 - **pnpm** >= 10.4.1
 - **Git**
@@ -106,7 +211,7 @@ Make sure you have these installed:
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/chat-cue.git
+git clone https://github.com/ASHUTOSH-KUMAR-RAO/chat-cue.git
 cd chat-cue
 ```
 
@@ -124,7 +229,7 @@ cp apps/web/.env.example apps/web/.env.local
 
 Add your credentials:
 ```env
-# Clerk Authentication
+# Clerk Authentication & Billing
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 
@@ -135,19 +240,21 @@ NEXT_PUBLIC_CONVEX_URL=https://...
 # OpenAI (for embeddings & LLM)
 OPENAI_API_KEY=sk-...
 
-# Stripe (for billing)
-STRIPE_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# VAPI (for voice agents)
+VAPI_PUBLIC_KEY=...
+VAPI_PRIVATE_KEY=...   # Stored in AWS Secrets Manager in production
 
-# AWS (for file storage)
+# AWS (for file storage & secrets)
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_S3_BUCKET=...
+AWS_REGION=...
 
 # Sentry (optional)
 SENTRY_DSN=...
 ```
+
+> ⚠️ **Security Note:** In production, sensitive keys like VAPI credentials are stored in **AWS Secrets Manager** — not in environment variables — for encrypted, auditable, and rotation-friendly key management.
 
 4. **Initialize Convex backend**
 ```bash
@@ -155,207 +262,30 @@ cd packages/backend
 pnpm setup
 ```
 
-This will:
-- Create your Convex deployment
-- Set up the database schema
-- Generate types
-
 5. **Start development servers**
 ```bash
-# From root directory
 pnpm dev
 ```
 
-This starts:
+Starts:
 - Next.js app on `http://localhost:3000`
+- Widget on `http://localhost:3001`
 - Convex backend with live reload
 
-## 📚 Development Workflow
-
-### Running the App
-
-```bash
-# Start all services
-pnpm dev
-
-# Start only web app
-pnpm --filter web dev
-
-# Start only backend
-pnpm --filter @workspace/backend dev
-```
-
-### Building for Production
-
-```bash
-# Build all packages
-pnpm build
-
-# Build specific package
-pnpm --filter web build
-```
-
-### Code Quality
-
-```bash
-# Lint all packages
-pnpm lint
-
-# Fix linting issues
-pnpm --filter web lint:fix
-
-# Format code
-pnpm format
-
-# Type checking
-pnpm --filter web typecheck
-```
-
-## 🎨 Key Components
-
-### Customer Support Widget
-Embeddable chat widget that can be added to any website:
-```tsx
-import { WidgetView } from '@/components/widget';
-
-<WidgetView organizationId="org_123" />
-```
-
-### Document Upload & Embedding
-Upload documents and automatically generate embeddings:
-```typescript
-// Upload document
-await uploadDocument(file);
-
-// Generate embeddings
-await generateEmbeddings(documentId);
-
-// Search similar documents
-const results = await searchDocuments(query);
-```
-
-### AI Response Generation
-Retrieve relevant context and generate AI responses:
-```typescript
-// 1. Convert query to embedding
-const queryEmbedding = await embedQuery(userQuestion);
-
-// 2. Search similar documents
-const context = await vectorSearch(queryEmbedding);
-
-// 3. Generate AI response with context
-const response = await generateResponse(userQuestion, context);
-```
+---
 
 ## ⚡ Turborepo Benefits
 
 Chat-Cue uses **Turborepo** for efficient monorepo management:
 
-- **⚡ Fast Builds** - Remote caching and parallel execution
-- **📦 Smart Caching** - Never rebuild the same code twice
-- **🔄 Task Pipelines** - Define dependencies between tasks
-- **📊 Build Analytics** - Track build performance
-- **🎯 Selective Builds** - Only build what changed
+- **Fast Builds** — Remote caching and parallel execution
+- **Smart Caching** — Never rebuild unchanged code
+- **Task Pipelines** — Dependency-aware build order
+- **Selective Builds** — Only build what changed
 
-### Turborepo Configuration
-
-```json
-{
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    }
-  }
-}
-```
-
-## 🔐 Security Features
-
-- **Multi-tenant Isolation** - Secure data separation per organization
-- **Row-Level Security** - Convex handles data access automatically
-- **API Key Management** - Secure credential storage
-- **Rate Limiting** - Prevent API abuse
-- **Input Validation** - Zod schema validation on all inputs
-- **XSS Protection** - Built-in Next.js security features
-
-## 💳 Billing & Subscriptions
-
-Chat-Cue includes complete billing functionality:
-
-- **Pricing Tiers** - Free, Pro, Enterprise plans
-- **Usage-Based Billing** - Track AI API usage
-- **Subscription Management** - Upgrade/downgrade flows
-- **Payment Processing** - Stripe integration
-- **Invoice Generation** - Automated billing
-
-## 📊 Monitoring & Analytics
-
-- **Error Tracking** - Sentry integration for production monitoring
-- **Performance Metrics** - Track response times and AI performance
-- **Usage Analytics** - Monitor customer interactions
-- **Cost Tracking** - Track AI API costs per organization
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-pnpm add -g vercel
-
-# Deploy
-vercel --prod
-```
-
-### Environment Variables
-
-Make sure to set all required environment variables in your Vercel dashboard.
-
-## 📖 Learning Resources
-
-This project teaches you:
-
-1. **AI Integration**
-   - Document embeddings generation
-   - Vector database setup
-   - Semantic search implementation
-   - Context-aware AI responses
-
-2. **Backend Development**
-   - Convex real-time database
-   - Serverless functions
-   - File uploads & processing
-   - API design
-
-3. **Frontend Development**
-   - Next.js 15 App Router
-   - shadcn/ui components
-   - Form handling & validation
-   - Real-time updates
-
-4. **SaaS Business Logic**
-   - Multi-tenancy
-   - Billing & subscriptions
-   - User management
-   - Analytics
-
-5. **Monorepo Management**
-   - Turborepo configuration
-   - Shared packages setup
-   - Build optimization
-   - Development workflow
+---
 
 ## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -363,28 +293,27 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+---
+
 ## 📝 License
 
 This project is [MIT](LICENSE) licensed.
 
+---
+
 ## 🙏 Acknowledgments
 
-- [shadcn/ui](https://ui.shadcn.com) for the amazing component library
+- [shadcn/ui](https://ui.shadcn.com) for the component library
 - [Convex](https://convex.dev) for the real-time backend
-- [Clerk](https://clerk.com) for authentication
+- [Clerk](https://clerk.com) for authentication and billing
+- [VAPI](https://vapi.ai) for voice agent infrastructure
 - [Vercel](https://vercel.com) for hosting
-
-## 📧 Support
-
-- 📧 Email: support@chat-cue.dev
-- 💬 Discord: [Join our community](#)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/chat-cue/issues)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for the modern web**
+**Built with ❤️ by Ashutosh Kumar Rao**
 
 ⭐ Star this repo if you find it helpful!
 
